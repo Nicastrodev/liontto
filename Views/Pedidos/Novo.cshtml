@@ -1,0 +1,130 @@
+@* Views/Pedidos/Novo.cshtml *@
+@model NovoPedidoViewModel
+@{ ViewData["Title"] = "Novo Pedido"; }
+@{ var ptBR = new System.Globalization.CultureInfo("pt-BR"); }
+
+<div class="card" style="max-width:820px;">
+    <form method="post" action="/Pedidos/Novo" id="form-pedido">
+        @Html.AntiForgeryToken()
+        <div class="form-grid">
+            <div class="form-group" style="grid-column:1/-1;">
+                <label>Cliente *</label>
+                <select name="ClienteId" required>
+                    <option value="">Selecione o cliente...</option>
+                    @foreach (var c in Model.Clientes)
+                    {
+                        <option value="@c.Id">@c.Nome — @(string.IsNullOrEmpty(c.Telefone) ? c.Email : c.Telefone)</option>
+                    }
+                </select>
+                <span class="text-muted" style="font-size:12px;margin-top:4px;display:block;">
+                    Não encontrou? <a href="/Clientes/Novo" target="_blank" style="color:var(--accent);">Cadastrar novo cliente</a>
+                </span>
+            </div>
+            <div class="form-group">
+                <label>Data de Entrega Prevista</label>
+                <input type="date" name="DataEntregaPrevista"/>
+            </div>
+            <div class="form-group">
+                <label>Observações</label>
+                <textarea name="Observacoes" placeholder="Anotações gerais sobre o pedido..."></textarea>
+            </div>
+        </div>
+
+        <div class="divider"></div>
+        <div class="mb-3">
+            <strong>Produtos do Pedido</strong>
+            <span class="text-muted" style="display:block;font-size:12px;margin-top:4px;">Adicione os móveis deste pedido</span>
+        </div>
+
+        <div id="produtos-lista">
+            <div class="produto-row card" style="padding:16px;margin-bottom:12px;background:var(--bg);">
+                <div class="form-grid" style="gap:12px;">
+                    <div class="form-group" style="grid-column:1/-1;margin-bottom:0;">
+                        <label>Produto *</label>
+                        <select name="ProdIds" class="prod-select" onchange="calcularTotal()">
+                            <option value="">Selecione o produto...</option>
+                            @foreach (var p in Model.Produtos)
+                            {
+                                <option value="@p.Id" data-preco="@p.PrecoBase">@p.Nome — @p.PrecoBase.ToString("C", ptBR)</option>
+                            }
+                        </select>
+                    </div>
+                    <div class="form-group" style="margin-bottom:0;">
+                        <label>Quantidade</label>
+                        <input type="number" name="ProdQtds" value="1" min="1" class="prod-qtd" onchange="calcularTotal()"/>
+                    </div>
+                    <div class="form-group" style="margin-bottom:0;">
+                        <label>Personalização</label>
+                        <input type="text" name="ProdPers" placeholder="Ex: Cor branco, 1,20m..."/>
+                    </div>
+                </div>
+                <button type="button" onclick="this.closest('.produto-row').remove();calcularTotal();" class="btn btn-danger btn-sm mt-3">✕ Remover</button>
+            </div>
+        </div>
+
+        @* Fonte de options para o JS *@
+        <div id="options-source" style="display:none;">
+            @foreach (var p in Model.Produtos)
+            {<option value="@p.Id" data-preco="@p.PrecoBase">@p.Nome — @p.PrecoBase.ToString("C", ptBR)</option>}
+        </div>
+
+        <button type="button" onclick="adicionarProduto()" class="btn btn-outline btn-sm mb-4">➕ Adicionar Produto</button>
+
+        <div class="card" style="background:var(--bg);padding:16px;margin-bottom:20px;">
+            <div class="flex justify-between items-center">
+                <span class="fw-600">Valor Total Estimado:</span>
+                <span id="valor-total" style="font-size:22px;font-weight:700;color:var(--accent);">R$ 0,00</span>
+            </div>
+        </div>
+
+        <div class="divider"></div>
+        <div class="flex gap-2">
+            <button type="submit" class="btn btn-primary">✅ Criar Pedido</button>
+            <a href="/Pedidos" class="btn btn-outline">Cancelar</a>
+        </div>
+    </form>
+</div>
+
+@section Scripts {
+<script>
+function adicionarProduto() {
+    const opts = document.getElementById('options-source').innerHTML;
+    const row = document.createElement('div');
+    row.className = 'produto-row card';
+    row.style.cssText = 'padding:16px;margin-bottom:12px;background:var(--bg);';
+    row.innerHTML = `
+        <div class="form-grid" style="gap:12px;">
+            <div class="form-group" style="grid-column:1/-1;margin-bottom:0;">
+                <label>Produto *</label>
+                <select name="ProdIds" class="prod-select" onchange="calcularTotal()">
+                    <option value="">Selecione o produto...</option>${opts}
+                </select>
+            </div>
+            <div class="form-group" style="margin-bottom:0;">
+                <label>Quantidade</label>
+                <input type="number" name="ProdQtds" value="1" min="1" class="prod-qtd" onchange="calcularTotal()"/>
+            </div>
+            <div class="form-group" style="margin-bottom:0;">
+                <label>Personalização</label>
+                <input type="text" name="ProdPers" placeholder="Ex: Cor branco, 1,20m..."/>
+            </div>
+        </div>
+        <button type="button" onclick="this.closest('.produto-row').remove();calcularTotal();" class="btn btn-danger btn-sm mt-3">✕ Remover</button>`;
+    document.getElementById('produtos-lista').appendChild(row);
+}
+
+function calcularTotal() {
+    let total = 0;
+    document.querySelectorAll('.produto-row').forEach(row => {
+        const sel = row.querySelector('.prod-select');
+        const qtd = row.querySelector('.prod-qtd');
+        if (sel?.value && qtd) {
+            const preco = parseFloat(sel.options[sel.selectedIndex].dataset.preco) || 0;
+            total += preco * (parseInt(qtd.value) || 1);
+        }
+    });
+    document.getElementById('valor-total').textContent =
+        'R$ ' + total.toFixed(2).replace('.', ',').replace(/\B(?=(\d{3})+(?!\d))/g, '.');
+}
+</script>
+}

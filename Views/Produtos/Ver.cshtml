@@ -1,0 +1,51 @@
+@* Views/Produtos/Ver.cshtml *@
+@model Produto
+@{ ViewData["Title"] = Model.Nome; }
+
+@section TopbarActions {
+    <a href="/Produtos/Editar/@Model.Id" class="btn btn-outline">✏️ Editar</a>
+    <a href="/Produtos" class="btn btn-primary">← Voltar</a>
+}
+
+<div class="two-col">
+    <div class="card">
+        <span class="card-title">Informações</span>
+        <table style="width:100%;">
+            <tr><td class="text-muted" style="padding:8px 0;width:140px;">Nome</td><td class="fw-600">@Model.Nome</td></tr>
+            <tr><td class="text-muted" style="padding:8px 0;">Descrição</td><td>@(string.IsNullOrEmpty(Model.Descricao_) ? "—" : Model.Descricao_)</td></tr>
+            <tr><td class="text-muted" style="padding:8px 0;">Preço Base</td>
+                <td class="fw-600" style="color:var(--accent);">@Model.PrecoBase.ToString("C", new System.Globalization.CultureInfo("pt-BR"))</td></tr>
+            <tr><td class="text-muted" style="padding:8px 0;">Tempo Produção</td>
+                <td><span class="badge badge-info">@Model.TempoProducaoDias dias</span></td></tr>
+        </table>
+    </div>
+
+    <div class="card">
+        <span class="card-title">Materiais Necessários</span>
+        @{
+            var matsEstoque = ViewBag.MateriaisEstoque as List<(MaterialDoProduto mat, double estoqueAtual)>;
+        }
+        @if (matsEstoque != null && matsEstoque.Any())
+        {
+            <table>
+                <thead><tr><th>Material</th><th>Necessário</th><th>Estoque</th></tr></thead>
+                <tbody>
+                    @foreach (var (mat, estoque) in matsEstoque)
+                    {
+                        <tr>
+                            <td class="fw-600">@mat.Nome</td>
+                            <td>@mat.QuantidadeNecessaria @mat.Unidade</td>
+                            <td>
+                                @if (estoque >= mat.QuantidadeNecessaria)
+                                { <span class="badge badge-ok">✅ @estoque</span> }
+                                else
+                                { <span class="badge badge-danger">⚠️ @estoque</span> }
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        }
+        else { <p class="text-muted">Nenhum material associado.</p> }
+    </div>
+</div>

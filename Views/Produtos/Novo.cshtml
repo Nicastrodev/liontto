@@ -1,0 +1,121 @@
+@* Views/Produtos/Novo.cshtml *@
+@model ProdutoFormViewModel
+@{ ViewData["Title"] = Model.EhEdicao ? "Editar Produto" : "Novo Produto"; }
+@{ var ptBR = new System.Globalization.CultureInfo("pt-BR"); }
+@{ var formAction = Model.EhEdicao ? $"/Produtos/Editar/{Model.Produto.Id}" : "/Produtos/Novo"; }
+
+<div class="card" style="max-width:820px;">
+    <form method="post" action="@formAction" id="form-produto">
+        @Html.AntiForgeryToken()
+        @if (Model.EhEdicao)
+        {
+            <input type="hidden" name="CriadoEm" value="@Model.Produto.CriadoEm.ToString("o")"/>
+        }
+
+        <div class="form-grid">
+            <div class="form-group" style="grid-column:1/-1;">
+                <label>Nome do Produto *</label>
+                <input type="text" name="Nome" value="@Model.Produto.Nome" required placeholder="Ex: Armário de Cozinha 3 Portas"/>
+            </div>
+            <div class="form-group" style="grid-column:1/-1;">
+                <label>Descrição</label>
+                <textarea name="Descricao_" placeholder="Medidas padrão, características...">@Model.Produto.Descricao_</textarea>
+            </div>
+            <div class="form-group">
+                <label>Preço Base (R$)</label>
+                <input type="number" name="PrecoBase" value="@Model.Produto.PrecoBase" min="0" step="0.01"/>
+            </div>
+            <div class="form-group">
+                <label>Tempo de Produção (dias)</label>
+                <input type="number" name="TempoProducaoDias" value="@Model.Produto.TempoProducaoDias" min="1"/>
+            </div>
+        </div>
+
+        <div class="divider"></div>
+        <div class="mb-3">
+            <strong>Materiais Necessários</strong>
+            <span class="text-muted" style="display:block;font-size:12px;margin-top:4px;">
+                Materiais consumidos na fabricação deste produto
+            </span>
+        </div>
+
+        <div id="materiais-lista">
+            @if (Model.EhEdicao && Model.Produto.Materiais.Any())
+            {
+                @* Modo edição: renderiza os materiais já associados pré-selecionados *@
+                @foreach (var mat in Model.Produto.Materiais)
+                {
+                    <div class="material-row flex gap-2 mb-3" style="align-items:center;">
+                        <select name="matIds" style="flex:2;">
+                            <option value="">Selecione...</option>
+                            @* CORREÇÃO: if separado — Razor Tag Helper não aceita ternário em atributos *@
+                            @foreach (var m in Model.Materiais)
+                            {
+                                if (m.Id == mat.MaterialId)
+                                {
+                                    <option value="@m.Id" selected>@m.Nome (@m.Unidade)</option>
+                                }
+                                else
+                                {
+                                    <option value="@m.Id">@m.Nome (@m.Unidade)</option>
+                                }
+                            }
+                        </select>
+                        <input type="number" name="matQtds" value="@mat.QuantidadeNecessaria"
+                               min="0.01" step="0.01" style="flex:1;"/>
+                        <button type="button" onclick="this.parentElement.remove()" class="btn btn-danger btn-sm">✕</button>
+                    </div>
+                }
+            }
+            else
+            {
+                @* Modo novo: uma linha vazia para começar *@
+                <div class="material-row flex gap-2 mb-3" style="align-items:center;">
+                    <select name="matIds" style="flex:2;">
+                        <option value="">Selecione o material...</option>
+                        @foreach (var m in Model.Materiais)
+                        {
+                            <option value="@m.Id">@m.Nome (@m.Unidade)</option>
+                        }
+                    </select>
+                    <input type="number" name="matQtds" placeholder="Quantidade" min="0.01" step="0.01" style="flex:1;"/>
+                    <button type="button" onclick="this.parentElement.remove()" class="btn btn-danger btn-sm">✕</button>
+                </div>
+            }
+        </div>
+
+        @* Container oculto com as options para o JS clonar *@
+        <div id="options-source" style="display:none;">
+            @foreach (var m in Model.Materiais)
+            {
+                <option value="@m.Id">@m.Nome (@m.Unidade)</option>
+            }
+        </div>
+
+        <button type="button" onclick="adicionarLinha()" class="btn btn-outline btn-sm mb-4">➕ Adicionar Material</button>
+
+        <div class="divider"></div>
+        <div class="flex gap-2">
+            <button type="submit" class="btn btn-primary">💾 Salvar Produto</button>
+            <a href="/Produtos" class="btn btn-outline">Cancelar</a>
+        </div>
+    </form>
+</div>
+
+@section Scripts {
+<script>
+function adicionarLinha() {
+    const options = document.getElementById('options-source').innerHTML;
+    const row = document.createElement('div');
+    row.className = 'material-row flex gap-2 mb-3';
+    row.style.alignItems = 'center';
+    row.innerHTML = `
+        <select name="matIds" style="flex:2;">
+            <option value="">Selecione o material...</option>${options}
+        </select>
+        <input type="number" name="matQtds" placeholder="Quantidade" min="0.01" step="0.01" style="flex:1;"/>
+        <button type="button" onclick="this.parentElement.remove()" class="btn btn-danger btn-sm">✕</button>`;
+    document.getElementById('materiais-lista').appendChild(row);
+}
+</script>
+}

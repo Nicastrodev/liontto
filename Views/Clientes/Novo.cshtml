@@ -1,0 +1,32 @@
+@* Views/Clientes/Novo.cshtml *@
+@model Cliente
+@{ ViewData["Title"] = "Novo Cliente"; }
+
+<div class="card" style="max-width:620px;">
+    <form method="post" action="/Clientes/Novo">
+        @Html.AntiForgeryToken()
+        <div class="form-grid">
+            <div class="form-group" style="grid-column:1/-1;">
+                <label>Nome Completo *</label>
+                <input type="text" name="Nome" value="@Model?.Nome" required placeholder="Ex: João da Silva"/>
+            </div>
+            <div class="form-group">
+                <label>Telefone</label>
+                <input type="text" name="Telefone" value="@Model?.Telefone" placeholder="(11) 99999-0000"/>
+            </div>
+            <div class="form-group">
+                <label>E-mail</label>
+                <input type="email" name="Email" value="@Model?.Email" placeholder="cliente@email.com"/>
+            </div>
+            <div class="form-group" style="grid-column:1/-1;">
+                <label>Endereço</label>
+                <input type="text" name="Endereco" value="@Model?.Endereco" placeholder="Rua, número, bairro — Cidade/UF"/>
+            </div>
+        </div>
+        <div class="divider"></div>
+        <div class="flex gap-2">
+            <button type="submit" class="btn btn-primary">💾 Salvar</button>
+            <a href="/Clientes" class="btn btn-outline">Cancelar</a>
+        </div>
+    </form>
+</div>

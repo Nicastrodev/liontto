@@ -1,0 +1,139 @@
+@* Views/Pedidos/Ver.cshtml *@
+@model DetalhesPedidoViewModel
+@{ ViewData["Title"] = $"Pedido #{Model.Pedido.Id}"; }
+@{ var ptBR = new System.Globalization.CultureInfo("pt-BR"); var p = Model.Pedido; }
+
+@section TopbarActions { <a href="/Pedidos" class="btn btn-outline">← Voltar</a> }
+
+<div class="col-2-1">
+    <div>
+        <div class="card">
+            <span class="card-title">Informações do Pedido</span>
+            <div class="two-col">
+                <div>
+                    <div class="text-muted" style="font-size:12px;margin-bottom:4px;">CLIENTE</div>
+                    <div class="fw-600" style="font-size:16px;">@p.ClienteNome</div>
+                </div>
+                <div>
+                    <div class="text-muted" style="font-size:12px;margin-bottom:4px;">DATAS</div>
+                    <div>📅 Pedido: <strong>@p.DataPedido.ToString("dd/MM/yyyy")</strong></div>
+                    @if (p.DataEntregaPrevista.HasValue)
+                    { <div>🎯 Previsão: <strong>@p.DataEntregaPrevista.Value.ToString("dd/MM/yyyy")</strong></div> }
+                    @if (p.DataEntregaReal.HasValue)
+                    { <div style="color:var(--success);">✅ Entregue: <strong>@p.DataEntregaReal.Value.ToString("dd/MM/yyyy")</strong></div> }
+                </div>
+            </div>
+            @if (!string.IsNullOrEmpty(p.Observacoes))
+            {
+                <div class="mt-3" style="background:var(--bg);padding:12px;border-radius:8px;">
+                    <div class="text-muted" style="font-size:12px;margin-bottom:4px;">OBSERVAÇÕES</div>
+                    <div>@p.Observacoes</div>
+                </div>
+            }
+        </div>
+
+        <div class="card">
+            <span class="card-title">Itens do Pedido</span>
+            @if (p.Itens.Any())
+            {
+                <table>
+                    <thead><tr><th>Produto</th><th>Qtd.</th><th>Preço Unit.</th><th>Subtotal</th><th>Personalização</th></tr></thead>
+                    <tbody>
+                        @foreach (var item in p.Itens)
+                        {
+                            <tr>
+                                <td class="fw-600">🪑 @item.ProdutoNome</td>
+                                <td>@item.Quantidade</td>
+                                <td>@item.PrecoUnitario.ToString("C", ptBR)</td>
+                                <td class="fw-600" style="color:var(--accent);">@item.Subtotal.ToString("C", ptBR)</td>
+                                <td class="text-muted" style="font-size:13px;">@(string.IsNullOrEmpty(item.Personalizacoes) ? "—" : item.Personalizacoes)</td>
+                            </tr>
+                        }
+                    </tbody>
+                    <tfoot>
+                        <tr style="border-top:2px solid var(--border);">
+                            <td colspan="3" style="text-align:right;font-weight:600;">TOTAL</td>
+                            <td style="font-size:18px;color:var(--accent);font-weight:700;">@p.ValorTotal.ToString("C", ptBR)</td>
+                            <td></td>
+                        </tr>
+                    </tfoot>
+                </table>
+            }
+            else
+            {
+                <div class="empty-state" style="padding:30px;">
+                    <div class="icon">🪑</div><p class="text-muted">Nenhum produto neste pedido.</p>
+                </div>
+            }
+        </div>
+    </div>
+
+    <div>
+        <div class="card">
+            <span class="card-title">🔨 Produção</span>
+            <div style="text-align:center;padding:20px 0;">
+                <div style="font-size:48px;margin-bottom:12px;">
+                    @(p.Status == StatusPedido.Aguardando ? "⏳" :
+                      p.Status == StatusPedido.EmProducao ? "🔨" :
+                      p.Status == StatusPedido.Pronto     ? "✅" : "📦")
+                </div>
+                <span class="badge @p.StatusCssClass" style="font-size:14px;padding:8px 16px;">@p.StatusLabel</span>
+            </div>
+
+            @if (p.Status != StatusPedido.Entregue)
+            {
+                <div class="divider"></div>
+                <div class="text-muted mb-3" style="font-size:12px;text-align:center;">Atualizar status:</div>
+
+                <form method="post" action="/Pedidos/AtualizarStatus/@p.Id" style="margin-bottom:8px;">
+                    @Html.AntiForgeryToken()
+                    <input type="hidden" name="acao" value="avancar"/>
+                    <button type="submit" class="btn @(p.Status == StatusPedido.Aguardando ? "btn-primary" : p.Status == StatusPedido.EmProducao ? "btn-success" : "btn-accent")" style="width:100%;">
+                        @(p.Status == StatusPedido.Aguardando ? "🔨 Iniciar Produção" :
+                          p.Status == StatusPedido.EmProducao ? "✅ Marcar como Pronto" : "📦 Confirmar Entrega")
+                    </button>
+                </form>
+
+                @if (p.Status != StatusPedido.Aguardando)
+                {
+                    <form method="post" action="/Pedidos/AtualizarStatus/@p.Id">
+                        @Html.AntiForgeryToken()
+                        <input type="hidden" name="acao" value="voltar"/>
+                        <button type="submit" class="btn btn-outline" style="width:100%;">↩ Voltar Status</button>
+                    </form>
+                }
+            }
+        </div>
+
+        <div class="card">
+            <span class="card-title">Linha do Tempo</span>
+            @{
+                var etapas = new[] {
+                    (StatusPedido.Aguardando, "⏳", "Aguardando"),
+                    (StatusPedido.EmProducao, "🔨", "Em Produção"),
+                    (StatusPedido.Pronto,     "✅", "Pronto"),
+                    (StatusPedido.Entregue,   "📦", "Entregue"),
+                };
+            }
+            @for (int i = 0; i < etapas.Length; i++)
+            {
+                var (status, icone, rotulo) = etapas[i];
+                bool ativo = (int)p.Status >= i;
+                bool atual = p.Status == status;
+                <div class="flex items-center gap-3 mb-3">
+                    <div style="width:36px;height:36px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:16px;flex-shrink:0;
+                                background:@(ativo ? "var(--accent)" : "var(--border)");
+                                color:@(ativo ? "var(--primary)" : "var(--text-muted)");">@icone</div>
+                    <div>
+                        <div class="fw-600" style="font-size:13px;@(!ativo ? "color:var(--text-muted)" : "")">@rotulo</div>
+                        @if (atual) { <div style="font-size:11px;color:var(--accent);">← Status atual</div> }
+                    </div>
+                </div>
+                @if (i < etapas.Length - 1)
+                {
+                    <div style="width:2px;height:16px;background:@((int)p.Status > i ? "var(--accent)" : "var(--border)");margin-left:17px;margin-bottom:3px;"></div>
+                }
+            }
+        </div>
+    </div>
+</div>

@@ -1,0 +1,48 @@
+@* Views/Produtos/Index.cshtml *@
+@model List<Produto>
+@{ ViewData["Title"] = "Catálogo de Produtos"; }
+
+@section TopbarActions { <a href="/Produtos/Novo" class="btn btn-accent">➕ Novo Produto</a> }
+
+@if (Model.Any())
+{
+    <div class="card">
+        <div class="table-wrapper">
+            <table>
+                <thead><tr><th>Produto</th><th>Descrição</th><th>Preço Base</th><th>Prod. (dias)</th><th>Materiais</th><th>Ações</th></tr></thead>
+                <tbody>
+                    @foreach (var p in Model)
+                    {
+                        <tr>
+                            <td class="fw-600">🪑 @p.Nome</td>
+                            <td class="text-muted" style="font-size:13px;">@(string.IsNullOrEmpty(p.Descricao_) ? "—" : p.Descricao_)</td>
+                            <td class="fw-600" style="color:var(--accent);">@p.PrecoBase.ToString("C", new System.Globalization.CultureInfo("pt-BR"))</td>
+                            <td><span class="badge badge-info">@p.TempoProducaoDias dias</span></td>
+                            <td><span class="badge badge-secondary">@p.Materiais.Count mat.</span></td>
+                            <td>
+                                <div class="flex gap-2">
+                                    <a href="/Produtos/Ver/@p.Id"    class="btn btn-outline btn-sm">👁</a>
+                                    <a href="/Produtos/Editar/@p.Id" class="btn btn-outline btn-sm">✏️</a>
+                                    <form method="post" action="/Produtos/Excluir/@p.Id"
+                                          data-confirm="Remover o produto '@p.Nome'?">
+                                        @Html.AntiForgeryToken()
+                                        <button type="submit" class="btn btn-danger btn-sm">🗑</button>
+                                    </form>
+                                </div>
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    </div>
+}
+else
+{
+    <div class="card">
+        <div class="empty-state">
+            <div class="icon">🪑</div><h3>Nenhum produto cadastrado</h3>
+            <a href="/Produtos/Novo" class="btn btn-primary mt-3">Cadastrar Produto</a>
+        </div>
+    </div>
+}

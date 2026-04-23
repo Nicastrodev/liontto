@@ -1,0 +1,63 @@
+@* ============================================================
+   Views/Materiais/Index.cshtml
+   ============================================================ *@
+@model List<Material>
+@{ ViewData["Title"] = "Controle de Estoque"; }
+
+@section TopbarActions {
+    <a href="/Materiais/Novo" class="btn btn-accent">➕ Novo Material</a>
+}
+
+@if (Model.Any())
+{
+    <div class="card">
+        <div class="table-wrapper">
+            <table>
+                <thead>
+                    <tr>
+                        <th>Material</th><th>Unidade</th><th>Qtd. Atual</th>
+                        <th>Qtd. Mínima</th><th>Preço Unit.</th><th>Status</th><th>Ações</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var m in Model)
+                    {
+                        <tr>
+                            <td class="fw-600">@m.Nome</td>
+                            <td class="text-muted">@m.Unidade</td>
+                            <td><strong>@m.Quantidade</strong></td>
+                            <td class="text-muted">@m.QuantidadeMinima</td>
+                            <td>@m.PrecoUnitario.ToString("C", new System.Globalization.CultureInfo("pt-BR"))</td>
+                            <td>
+                                @if (m.StatusEstoque == "critico")      { <span class="badge badge-danger">🔴 Crítico</span> }
+                                else if (m.StatusEstoque == "baixo")    { <span class="badge badge-warning">🟡 Baixo</span>  }
+                                else                                    { <span class="badge badge-ok">🟢 OK</span>          }
+                            </td>
+                            <td>
+                                <div class="flex gap-2">
+                                    <a href="/Materiais/Movimentar/@m.Id" class="btn btn-outline btn-sm">📥 Movimentar</a>
+                                    <a href="/Materiais/Editar/@m.Id"     class="btn btn-outline btn-sm">✏️</a>
+                                    <form method="post" action="/Materiais/Excluir/@m.Id"
+                                          data-confirm="Remover o material '@m.Nome'?">
+                                        @Html.AntiForgeryToken()
+                                        <button type="submit" class="btn btn-danger btn-sm">🗑</button>
+                                    </form>
+                                </div>
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    </div>
+}
+else
+{
+    <div class="card">
+        <div class="empty-state">
+            <div class="icon">📦</div>
+            <h3>Nenhum material cadastrado</h3>
+            <a href="/Materiais/Novo" class="btn btn-primary mt-3">Cadastrar Material</a>
+        </div>
+    </div>
+}

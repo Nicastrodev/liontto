@@ -1,0 +1,46 @@
+@* Views/Clientes/Index.cshtml *@
+@model List<Cliente>
+@{ ViewData["Title"] = "Clientes"; }
+
+@section TopbarActions { <a href="/Clientes/Novo" class="btn btn-accent">➕ Novo Cliente</a> }
+
+@if (Model.Any())
+{
+    <div class="card">
+        <div class="table-wrapper">
+            <table>
+                <thead><tr><th>Nome</th><th>Telefone</th><th>E-mail</th><th>Endereço</th><th>Ações</th></tr></thead>
+                <tbody>
+                    @foreach (var c in Model)
+                    {
+                        <tr>
+                            <td class="fw-600">@c.Nome</td>
+                            <td>@(string.IsNullOrEmpty(c.Telefone) ? "—" : c.Telefone)</td>
+                            <td class="text-muted">@(string.IsNullOrEmpty(c.Email) ? "—" : c.Email)</td>
+                            <td class="text-muted" style="font-size:13px;">@(string.IsNullOrEmpty(c.Endereco) ? "—" : c.Endereco)</td>
+                            <td>
+                                <div class="flex gap-2">
+                                    <a href="/Clientes/Editar/@c.Id" class="btn btn-outline btn-sm">✏️ Editar</a>
+                                    <form method="post" action="/Clientes/Excluir/@c.Id"
+                                          data-confirm="Remover o cliente '@c.Nome'?">
+                                        @Html.AntiForgeryToken()
+                                        <button type="submit" class="btn btn-danger btn-sm">🗑</button>
+                                    </form>
+                                </div>
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    </div>
+}
+else
+{
+    <div class="card">
+        <div class="empty-state">
+            <div class="icon">👥</div><h3>Nenhum cliente cadastrado</h3>
+            <a href="/Clientes/Novo" class="btn btn-primary mt-3">Cadastrar Cliente</a>
+        </div>
+    </div>
+}

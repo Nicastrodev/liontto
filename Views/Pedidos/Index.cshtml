@@ -1,0 +1,70 @@
+@* Views/Pedidos/Index.cshtml *@
+@model List<Pedido>
+@{ ViewData["Title"] = "Pedidos"; }
+
+@section TopbarActions { <a href="/Pedidos/Novo" class="btn btn-accent">➕ Novo Pedido</a> }
+
+@{
+    var statusFiltro = ViewBag.StatusFiltro as string;
+    var statusOpcoes = new[] {
+        ("Aguardando","⏳ Aguardando"), ("EmProducao","🔨 Em Produção"),
+        ("Pronto","✅ Pronto"), ("Entregue","📦 Entregue")
+    };
+    var ptBR = new System.Globalization.CultureInfo("pt-BR");
+}
+
+<div class="flex gap-2 mb-4" style="flex-wrap:wrap;">
+    <a href="/Pedidos" class="btn btn-sm @(string.IsNullOrEmpty(statusFiltro) ? "btn-primary" : "btn-outline")">Todos</a>
+    @foreach (var (val, label) in statusOpcoes)
+    {
+        <a href="/Pedidos?status=@val" class="btn btn-sm @(statusFiltro == val ? "btn-primary" : "btn-outline")">@label</a>
+    }
+</div>
+
+@if (Model.Any())
+{
+    <div class="card">
+        <div class="table-wrapper">
+            <table>
+                <thead>
+                    <tr><th>#</th><th>Cliente</th><th>Status</th><th>Valor Total</th><th>Data</th><th>Entrega Prev.</th><th>Ações</th></tr>
+                </thead>
+                <tbody>
+                    @foreach (var p in Model)
+                    {
+                        <tr>
+                            <td><a href="/Pedidos/Ver/@p.Id" style="color:var(--accent);font-weight:700;">#@p.Id</a></td>
+                            <td class="fw-600">@p.ClienteNome</td>
+                            <td><span class="badge @p.StatusCssClass">@p.StatusLabel</span></td>
+                            <td class="fw-600">@p.ValorTotal.ToString("C", ptBR)</td>
+                            <td class="text-muted">@p.DataPedido.ToString("dd/MM/yyyy")</td>
+                            <td class="text-muted">@(p.DataEntregaPrevista?.ToString("dd/MM/yyyy") ?? "—")</td>
+                            <td>
+                                <div class="flex gap-2">
+                                    <a href="/Pedidos/Ver/@p.Id" class="btn btn-outline btn-sm">👁 Ver</a>
+                                    @if (p.Status != StatusPedido.Entregue)
+                                    {
+                                        <form method="post" action="/Pedidos/Excluir/@p.Id"
+                                              data-confirm="Remover o pedido #@p.Id?">
+                                            @Html.AntiForgeryToken()
+                                            <button type="submit" class="btn btn-danger btn-sm">🗑</button>
+                                        </form>
+                                    }
+                                </div>
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    </div>
+}
+else
+{
+    <div class="card">
+        <div class="empty-state">
+            <div class="icon">📋</div><h3>Nenhum pedido encontrado</h3>
+            <a href="/Pedidos/Novo" class="btn btn-primary mt-3">Criar Pedido</a>
+        </div>
+    </div>
+}
