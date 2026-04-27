@@ -102,3 +102,4 @@ C:\Users\mathe\OneDrive\Desktop\liontto_mysql\obj\Debug\net8.0\refint\LionttoMov
 C:\Users\mathe\OneDrive\Desktop\liontto_mysql\obj\Debug\net8.0\LionttoMoveis.pdb
 C:\Users\mathe\OneDrive\Desktop\liontto_mysql\obj\Debug\net8.0\LionttoMoveis.genruntimeconfig.cache
 C:\Users\mathe\OneDrive\Desktop\liontto_mysql\obj\Debug\net8.0\ref\LionttoMoveis.dll
+C:\Users\mathe\OneDrive\Desktop\liontto_mysql\obj\Debug\net8.0\LionttoMoveis.sourcelink.json
