@@ -5,6 +5,7 @@
 
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
+using LionttoMoveis.Validation;
 
 namespace LionttoMoveis.Models
 {
@@ -16,22 +17,27 @@ namespace LionttoMoveis.Models
     public class Material : EntidadeBase
     {
         [Required]
+        [RequiredTrimmed(ErrorMessage = "Nome e obrigatorio.")]
         [Column("nome")]
         [MaxLength(150)]
         public string Nome { get; set; } = string.Empty;
 
         [Required]
+        [RequiredTrimmed(ErrorMessage = "Unidade e obrigatoria.")]
         [Column("unidade")]
         [MaxLength(30)]
         public string Unidade { get; set; } = string.Empty;
 
         [Column("quantidade")]
+        [Range(0, double.MaxValue, ErrorMessage = "Quantidade nao pode ser negativa.")]
         public double Quantidade { get; set; } = 0;
 
         [Column("quantidade_minima")]
+        [Range(0, double.MaxValue, ErrorMessage = "Quantidade minima nao pode ser negativa.")]
         public double QuantidadeMinima { get; set; } = 5;
 
         [Column("preco_unitario", TypeName = "decimal(10,2)")]
+        [Range(typeof(decimal), "0", "9999999999", ErrorMessage = "Preco unitario invalido.")]
         public decimal PrecoUnitario { get; set; } = 0;
 
         // Navegação: histórico de movimentações deste material

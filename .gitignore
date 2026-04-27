@@ -1,0 +1,44 @@
+# Build output
+bin/
+obj/
+build/
+dist/
+out/
+
+# Logs
+logs/
+*.log
+
+# Env/secrets
+.env
+.env.*
+*.env
+!.env.example
+secrets.json
+secrets.*.json
+*.pfx
+*.pem
+*.key
+*.crt
+*.cer
+*.jks
+*.kdbx
+
+# IDE/OS
+.vs/
+.vscode/
+.idea/
+*.suo
+*.user
+*.userosscache
+.DS_Store
+Thumbs.db
+
+# Node (if added later)
+node_modules/
+
+# Test/coverage
+coverage/
+TestResults/
+*.trx
+*.coverage

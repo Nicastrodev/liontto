@@ -8,6 +8,7 @@
 
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
+using LionttoMoveis.Validation;
 
 namespace LionttoMoveis.Models
 {
@@ -38,14 +39,18 @@ namespace LionttoMoveis.Models
         public Produto? Produto { get; set; }
 
         // Nome desnormalizado para histórico mesmo se produto for excluído
+        [Required]
+        [RequiredTrimmed(ErrorMessage = "Nome do produto e obrigatorio.")]
         [Column("produto_nome")]
         [MaxLength(150)]
         public string ProdutoNome { get; set; } = string.Empty;
 
         [Column("quantidade")]
+        [Range(1, int.MaxValue, ErrorMessage = "Quantidade do item deve ser maior que zero.")]
         public int Quantidade { get; set; } = 1;
 
         [Column("preco_unitario", TypeName = "decimal(10,2)")]
+        [Range(typeof(decimal), "0", "9999999999", ErrorMessage = "Preco unitario invalido.")]
         public decimal PrecoUnitario { get; set; }
 
         [Column("personalizacoes")]
@@ -62,10 +67,13 @@ namespace LionttoMoveis.Models
     {
         // FK → Cliente
         [Column("cliente_id")]
+        [Range(1, int.MaxValue, ErrorMessage = "Cliente invalido.")]
         public int ClienteId { get; set; }
         public Cliente? Cliente { get; set; }
 
         // Nome desnormalizado
+        [Required]
+        [RequiredTrimmed(ErrorMessage = "Nome do cliente e obrigatorio.")]
         [Column("cliente_nome")]
         [MaxLength(150)]
         public string ClienteNome { get; set; } = string.Empty;
@@ -75,9 +83,10 @@ namespace LionttoMoveis.Models
 
         [Column("observacoes")]
         [MaxLength(500)]
-        public string Observacoes { get; set; } = string.Empty;
+        public string Observacoes  { get; set; } = string.Empty;
 
         [Column("valor_total", TypeName = "decimal(10,2)")]
+        [Range(typeof(decimal), "0", "9999999999", ErrorMessage = "Valor total invalido.")]
         public decimal ValorTotal { get; set; } = 0;
 
         [Column("data_pedido")]

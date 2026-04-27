@@ -11,7 +11,12 @@ using LionttoMoveis.Services;
 var builder = WebApplication.CreateBuilder(args);
 
 // ── 1. MVC com Views Razor ──────────────────────────────────
-builder.Services.AddControllersWithViews();
+builder.Services.AddControllersWithViews(options =>
+{
+    options.ModelBindingMessageProvider.SetValueMustNotBeNullAccessor(_ => "Preencha este campo.");
+    options.ModelBindingMessageProvider.SetValueIsInvalidAccessor(_ => "Valor invalido para o campo informado.");
+    options.ModelBindingMessageProvider.SetAttemptedValueIsInvalidAccessor((_, campo) => $"Preencha o campo {campo}.");
+});
 
 // ── 2. Conexão com MySQL via EF Core (Pomelo) ───────────────
 var connStr = builder.Configuration.GetConnectionString("MySQL");

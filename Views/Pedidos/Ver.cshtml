@@ -36,7 +36,8 @@
             <span class="card-title">Itens do Pedido</span>
             @if (p.Itens.Any())
             {
-                <table>
+                <div class="table-wrapper">
+                    <table>
                     <thead><tr><th>Produto</th><th>Qtd.</th><th>Preço Unit.</th><th>Subtotal</th><th>Personalização</th></tr></thead>
                     <tbody>
                         @foreach (var item in p.Itens)
@@ -57,7 +58,8 @@
                             <td></td>
                         </tr>
                     </tfoot>
-                </table>
+                    </table>
+                </div>
             }
             else
             {

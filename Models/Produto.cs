@@ -8,6 +8,7 @@
 
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
+using LionttoMoveis.Validation;
 
 namespace LionttoMoveis.Models
 {
@@ -31,15 +32,20 @@ namespace LionttoMoveis.Models
         public Material? Material { get; set; }
 
         // Nome desnormalizado para exibição rápida sem joins adicionais
+        [Required]
+        [RequiredTrimmed(ErrorMessage = "Nome do material e obrigatorio.")]
         [Column("nome_material")]
         [MaxLength(150)]
         public string Nome { get; set; } = string.Empty;
 
+        [Required]
+        [RequiredTrimmed(ErrorMessage = "Unidade do material e obrigatoria.")]
         [Column("unidade")]
         [MaxLength(30)]
         public string Unidade { get; set; } = string.Empty;
 
         [Column("quantidade_necessaria")]
+        [Range(0.01, double.MaxValue, ErrorMessage = "Quantidade necessaria deve ser maior que zero.")]
         public double QuantidadeNecessaria { get; set; }
     }
 
@@ -52,6 +58,7 @@ namespace LionttoMoveis.Models
     public class Produto : EntidadeBase
     {
         [Required]
+        [RequiredTrimmed(ErrorMessage = "Nome do produto e obrigatorio.")]
         [Column("nome")]
         [MaxLength(150)]
         public string Nome { get; set; } = string.Empty;
@@ -61,9 +68,11 @@ namespace LionttoMoveis.Models
         public string Descricao_ { get; set; } = string.Empty;
 
         [Column("preco_base", TypeName = "decimal(10,2)")]
+        [Range(typeof(decimal), "0", "9999999999", ErrorMessage = "Preco base invalido.")]
         public decimal PrecoBase { get; set; } = 0;
 
         [Column("tempo_producao_dias")]
+        [Range(1, int.MaxValue, ErrorMessage = "Tempo de producao deve ser de pelo menos 1 dia.")]
         public int TempoProducaoDias { get; set; } = 7;
 
         // Navegação (substitui a lista embedded do MongoDB)

@@ -13,7 +13,7 @@ using System.Reflection;
 [assembly: System.Reflection.AssemblyCompanyAttribute("LionttoMoveis")]
 [assembly: System.Reflection.AssemblyConfigurationAttribute("Debug")]
 [assembly: System.Reflection.AssemblyFileVersionAttribute("1.0.0.0")]
-[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+fc696c91164ad184fc936bdf63b3bb4429fe7981")]
+[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+5c96050bc0254922f2b2eb263fdc38ff94d5f3d6")]
 [assembly: System.Reflection.AssemblyProductAttribute("LionttoMoveis")]
 [assembly: System.Reflection.AssemblyTitleAttribute("LionttoMoveis")]
 [assembly: System.Reflection.AssemblyVersionAttribute("1.0.0.0")]

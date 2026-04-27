@@ -99,19 +99,21 @@
         </div>
         @if (Model.AlertasEstoque.Any())
         {
-            <table>
-                <thead><tr><th>Material</th><th>Atual</th><th>Mínimo</th></tr></thead>
-                <tbody>
-                    @foreach (var m in Model.AlertasEstoque)
-                    {
-                        <tr>
-                            <td class="fw-600">@m.Nome</td>
-                            <td><span class="badge badge-danger">@m.Quantidade @m.Unidade</span></td>
-                            <td class="text-muted">@m.QuantidadeMinima @m.Unidade</td>
-                        </tr>
-                    }
-                </tbody>
-            </table>
+            <div class="table-wrapper">
+                <table>
+                    <thead><tr><th>Material</th><th>Atual</th><th>Mínimo</th></tr></thead>
+                    <tbody>
+                        @foreach (var m in Model.AlertasEstoque)
+                        {
+                            <tr>
+                                <td class="fw-600">@m.Nome</td>
+                                <td><span class="badge badge-danger">@m.Quantidade @m.Unidade</span></td>
+                                <td class="text-muted">@m.QuantidadeMinima @m.Unidade</td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
         }
         else { <div class="empty-state" style="padding:30px;"><div class="icon">✅</div><p>Estoque em dia!</p></div> }
     </div>

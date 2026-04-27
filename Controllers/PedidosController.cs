@@ -3,6 +3,7 @@
 // =============================================================
 
 using Microsoft.AspNetCore.Mvc;
+using LionttoMoveis.Helpers;
 using LionttoMoveis.Models;
 using LionttoMoveis.Repository;
 using LionttoMoveis.ViewModels;
@@ -11,12 +12,16 @@ namespace LionttoMoveis.Controllers
 {
     public class PedidosController : Controller
     {
-        private readonly PedidoRepository  _pedidos;
+        private readonly PedidoRepository _pedidos;
         private readonly ClienteRepository _clientes;
         private readonly ProdutoRepository _produtos;
 
         public PedidosController(PedidoRepository ped, ClienteRepository cli, ProdutoRepository prod)
-        { _pedidos = ped; _clientes = cli; _produtos = prod; }
+        {
+            _pedidos = ped;
+            _clientes = cli;
+            _produtos = prod;
+        }
 
         public async Task<IActionResult> Index(string? status)
         {
@@ -30,46 +35,43 @@ namespace LionttoMoveis.Controllers
             return View(lista);
         }
 
-        public async Task<IActionResult> Novo() => View(new NovoPedidoViewModel
-        {
-            Clientes = await _clientes.ObterOrdenadosAsync(),
-            Produtos = await _produtos.ObterOrdenadosAsync()
-        });
+        public async Task<IActionResult> Novo()
+            => View(await MontarNovoPedidoVmAsync(new NovoPedidoViewModel()));
 
         [HttpPost]
+        [ValidateAntiForgeryToken]
         public async Task<IActionResult> Novo(NovoPedidoViewModel vm)
         {
-            if (vm.ClienteId == 0)
-            { TempData["Erro"] = "Selecione um cliente."; return RedirectToAction(nameof(Novo)); }
+            NormalizarNovoPedido(vm);
+
+            if (!ModelState.IsValid)
+                return await RetornarNovoComErroAsync(vm, ObterPrimeiroErroModelState() ?? "Dados invalidos para criar pedido.");
 
             var cliente = await _clientes.ObterPorIdAsync(vm.ClienteId);
+            if (cliente is null || string.IsNullOrWhiteSpace(cliente.Nome))
+                return await RetornarNovoComErroAsync(vm, "Cliente selecionado e invalido.");
+
+            DateTime? dataEntregaPrevista = null;
+            if (!string.IsNullOrWhiteSpace(vm.DataEntregaPrevista))
+            {
+                if (!DateTime.TryParse(vm.DataEntregaPrevista, out var dataParseada))
+                    return await RetornarNovoComErroAsync(vm, "Data de entrega prevista invalida.");
+
+                dataEntregaPrevista = dataParseada;
+            }
+
+            var (itens, erroItens) = await MontarItensDoPedidoAsync(vm);
+            if (erroItens is not null)
+                return await RetornarNovoComErroAsync(vm, erroItens);
 
             var pedido = new Pedido
             {
-                ClienteId           = vm.ClienteId,
-                ClienteNome         = cliente?.Nome ?? "",
-                Observacoes         = vm.Observacoes ?? "",
-                DataEntregaPrevista = string.IsNullOrEmpty(vm.DataEntregaPrevista)
-                    ? null
-                    : DateTime.Parse(vm.DataEntregaPrevista),
+                ClienteId = vm.ClienteId,
+                ClienteNome = cliente.Nome.Trim(),
+                Observacoes = vm.Observacoes ?? string.Empty,
+                DataEntregaPrevista = dataEntregaPrevista,
+                Itens = itens
             };
-
-            // Monta os itens a partir das listas paralelas do formulário
-            for (int i = 0; i < vm.ProdIds.Count; i++)
-            {
-                if (vm.ProdIds[i] == 0) continue;
-                var prod = await _produtos.ObterPorIdAsync(vm.ProdIds[i]);
-                if (prod is null) continue;
-
-                pedido.Itens.Add(new ItemDoPedido
-                {
-                    ProdutoId       = prod.Id,
-                    ProdutoNome     = prod.Nome,
-                    Quantidade      = i < vm.ProdQtds.Count ? vm.ProdQtds[i] : 1,
-                    PrecoUnitario   = prod.PrecoBase,
-                    Personalizacoes = i < vm.ProdPers.Count ? vm.ProdPers[i] : ""
-                });
-            }
 
             pedido.RecalcularTotal();
             await _pedidos.InserirComItensAsync(pedido);
@@ -86,6 +88,7 @@ namespace LionttoMoveis.Controllers
         }
 
         [HttpPost]
+        [ValidateAntiForgeryToken]
         public async Task<IActionResult> AtualizarStatus(int id, string acao)
         {
             var pedido = await _pedidos.ObterComItensAsync(id);
@@ -102,15 +105,83 @@ namespace LionttoMoveis.Controllers
         }
 
         [HttpPost]
+        [ValidateAntiForgeryToken]
         public async Task<IActionResult> Excluir(int id)
         {
             var pedido = await _pedidos.ObterComItensAsync(id);
             if (pedido?.Status == StatusPedido.Entregue)
-            { TempData["Erro"] = "Não é possível excluir pedido já entregue."; return RedirectToAction(nameof(Ver), new { id }); }
+            {
+                TempData["Erro"] = "Nao e possivel excluir pedido ja entregue.";
+                return RedirectToAction(nameof(Ver), new { id });
+            }
 
             await _pedidos.ExcluirAsync(id);
             TempData["Sucesso"] = "Pedido removido.";
             return RedirectToAction(nameof(Index));
         }
+
+        private async Task<(List<ItemDoPedido> itens, string? erro)> MontarItensDoPedidoAsync(NovoPedidoViewModel vm)
+        {
+            var itens = new List<ItemDoPedido>();
+
+            for (int i = 0; i < vm.ProdIds.Count; i++)
+            {
+                var produtoId = vm.ProdIds[i];
+                if (produtoId <= 0)
+                    continue;
+
+                var quantidade = i < vm.ProdQtds.Count ? vm.ProdQtds[i] : 0;
+                if (quantidade <= 0)
+                    return (itens, "Informe quantidade valida para todos os produtos selecionados.");
+
+                var prod = await _produtos.ObterPorIdAsync(produtoId);
+                if (prod is null || string.IsNullOrWhiteSpace(prod.Nome))
+                    return (itens, "Um dos produtos selecionados nao existe mais.");
+
+                var personalizacao = i < vm.ProdPers.Count ? (vm.ProdPers[i] ?? string.Empty).Trim() : string.Empty;
+
+                itens.Add(new ItemDoPedido
+                {
+                    ProdutoId = prod.Id,
+                    ProdutoNome = prod.Nome.Trim(),
+                    Quantidade = quantidade,
+                    PrecoUnitario = prod.PrecoBase,
+                    Personalizacoes = personalizacao
+                });
+            }
+
+            if (!itens.Any())
+                return (itens, "Adicione pelo menos um produto valido ao pedido.");
+
+            return (itens, null);
+        }
+
+        private static void NormalizarNovoPedido(NovoPedidoViewModel vm)
+        {
+            vm.Observacoes = (vm.Observacoes ?? string.Empty).Trim();
+            vm.DataEntregaPrevista = string.IsNullOrWhiteSpace(vm.DataEntregaPrevista)
+                ? null
+                : vm.DataEntregaPrevista.Trim();
+
+            for (int i = 0; i < vm.ProdPers.Count; i++)
+                vm.ProdPers[i] = (vm.ProdPers[i] ?? string.Empty).Trim();
+        }
+
+        private async Task<NovoPedidoViewModel> MontarNovoPedidoVmAsync(NovoPedidoViewModel vm)
+        {
+            vm.Clientes = await _clientes.ObterOrdenadosAsync();
+            vm.Produtos = await _produtos.ObterOrdenadosAsync();
+            return vm;
+        }
+
+        private async Task<IActionResult> RetornarNovoComErroAsync(NovoPedidoViewModel vm, string erro)
+        {
+            TempData["Erro"] = erro;
+            var vmCompleto = await MontarNovoPedidoVmAsync(vm);
+            return View("Novo", vmCompleto);
+        }
+
+        private string? ObterPrimeiroErroModelState()
+            => ModelStateErrorHelper.ObterPrimeiroErroAmigavel(ModelState);
     }
 }

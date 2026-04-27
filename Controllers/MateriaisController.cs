@@ -3,6 +3,7 @@
 // =============================================================
 
 using Microsoft.AspNetCore.Mvc;
+using LionttoMoveis.Helpers;
 using LionttoMoveis.Models;
 using LionttoMoveis.Repository;
 using LionttoMoveis.Services;
@@ -12,17 +13,17 @@ namespace LionttoMoveis.Controllers
 {
     public class MateriaisController : Controller
     {
-        private readonly MaterialRepository     _materiais;
+        private readonly MaterialRepository _materiais;
         private readonly MovimentacaoRepository _movimentacoes;
-        private readonly EstoqueService         _estoqueService;
+        private readonly EstoqueService _estoqueService;
 
         public MateriaisController(
             MaterialRepository mat,
             MovimentacaoRepository mov,
             EstoqueService estoqueService)
         {
-            _materiais      = mat;
-            _movimentacoes  = mov;
+            _materiais = mat;
+            _movimentacoes = mov;
             _estoqueService = estoqueService;
         }
 
@@ -32,10 +33,16 @@ namespace LionttoMoveis.Controllers
         public IActionResult Novo() => View(new Material());
 
         [HttpPost]
+        [ValidateAntiForgeryToken]
         public async Task<IActionResult> Novo(Material material)
         {
-            if (string.IsNullOrWhiteSpace(material.Nome) || string.IsNullOrWhiteSpace(material.Unidade))
-            { TempData["Erro"] = "Nome e unidade são obrigatórios."; return View(material); }
+            NormalizarMaterial(material);
+
+            if (!ModelState.IsValid)
+            {
+                TempData["Erro"] = ObterPrimeiroErroModelState() ?? "Preencha os campos obrigatorios.";
+                return View(material);
+            }
 
             await _materiais.InserirAsync(material);
             TempData["Sucesso"] = $"Material \"{material.Nome}\" cadastrado!";
@@ -50,9 +57,27 @@ namespace LionttoMoveis.Controllers
         }
 
         [HttpPost]
+        [ValidateAntiForgeryToken]
         public async Task<IActionResult> Editar(int id, Material material)
         {
+            var existente = await _materiais.ObterPorIdAsync(id);
+            if (existente is null) return NotFound();
+
+            NormalizarMaterial(material);
+
+            if (!ModelState.IsValid)
+            {
+                TempData["Erro"] = ObterPrimeiroErroModelState() ?? "Preencha os campos obrigatorios.";
+                material.Id = id;
+                material.CriadoEm = existente.CriadoEm;
+                material.Quantidade = existente.Quantidade;
+                return View(material);
+            }
+
             material.Id = id;
+            material.CriadoEm = existente.CriadoEm;
+            material.Quantidade = existente.Quantidade;
+
             await _materiais.AtualizarAsync(material);
             TempData["Sucesso"] = "Material atualizado!";
             return RedirectToAction(nameof(Index));
@@ -68,19 +93,37 @@ namespace LionttoMoveis.Controllers
         }
 
         [HttpPost]
+        [ValidateAntiForgeryToken]
         public async Task<IActionResult> Movimentar(int id, MovimentacaoViewModel vm)
         {
-            var tipo = vm.Tipo == "Entrada" ? TipoMovimentacao.Entrada : TipoMovimentacao.Saida;
+            if (!ModelState.IsValid)
+            {
+                TempData["Erro"] = ObterPrimeiroErroModelState() ?? "Dados invalidos para movimentacao.";
+                return RedirectToAction(nameof(Movimentar), new { id });
+            }
+
+            if (!Enum.TryParse<TipoMovimentacao>(vm.Tipo, ignoreCase: true, out var tipo))
+            {
+                TempData["Erro"] = "Tipo de movimentacao invalido.";
+                return RedirectToAction(nameof(Movimentar), new { id });
+            }
+
+            vm.Motivo = (vm.Motivo ?? string.Empty).Trim();
+
             var erro = await _estoqueService.MovimentarAsync(id, tipo, vm.Quantidade, vm.Motivo);
 
             if (erro is not null)
-            { TempData["Erro"] = erro; return RedirectToAction(nameof(Movimentar), new { id }); }
+            {
+                TempData["Erro"] = erro;
+                return RedirectToAction(nameof(Movimentar), new { id });
+            }
 
-            TempData["Sucesso"] = $"Movimentação de {vm.Quantidade} registrada!";
+            TempData["Sucesso"] = $"Movimentacao de {vm.Quantidade} registrada!";
             return RedirectToAction(nameof(Index));
         }
 
         [HttpPost]
+        [ValidateAntiForgeryToken]
         public async Task<IActionResult> Excluir(int id)
         {
             var mat = await _materiais.ObterPorIdAsync(id);
@@ -91,5 +134,14 @@ namespace LionttoMoveis.Controllers
             }
             return RedirectToAction(nameof(Index));
         }
+
+        private static void NormalizarMaterial(Material material)
+        {
+            material.Nome = (material.Nome ?? string.Empty).Trim();
+            material.Unidade = (material.Unidade ?? string.Empty).Trim();
+        }
+
+        private string? ObterPrimeiroErroModelState()
+            => ModelStateErrorHelper.ObterPrimeiroErroAmigavel(ModelState);
     }
 }

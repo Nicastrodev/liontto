@@ -4,6 +4,7 @@
 
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
+using LionttoMoveis.Validation;
 
 namespace LionttoMoveis.Models
 {
@@ -11,6 +12,7 @@ namespace LionttoMoveis.Models
     public class Cliente : EntidadeBase
     {
         [Required]
+        [RequiredTrimmed(ErrorMessage = "Nome e obrigatorio.")]
         [Column("nome")]
         [MaxLength(150)]
         public string Nome { get; set; } = string.Empty;
