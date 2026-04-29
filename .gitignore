@@ -28,6 +28,7 @@ secrets.*.json
 .vs/
 .vscode/
 .idea/
+.vercel/
 *.suo
 *.user
 *.userosscache

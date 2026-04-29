@@ -183,3 +183,5 @@ C:\Users\mathe\OneDrive\Desktop\liontto_mysql\build_tmp\ru\Microsoft.CodeAnalysi
 C:\Users\mathe\OneDrive\Desktop\liontto_mysql\build_tmp\tr\Microsoft.CodeAnalysis.Workspaces.resources.dll
 C:\Users\mathe\OneDrive\Desktop\liontto_mysql\build_tmp\zh-Hans\Microsoft.CodeAnalysis.Workspaces.resources.dll
 C:\Users\mathe\OneDrive\Desktop\liontto_mysql\build_tmp\zh-Hant\Microsoft.CodeAnalysis.Workspaces.resources.dll
+C:\Users\mathe\OneDrive\Desktop\liontto_mysql\build_tmp\package.json
+C:\Users\mathe\OneDrive\Desktop\liontto_mysql\build_tmp\vercel.json
