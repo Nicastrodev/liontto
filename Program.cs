@@ -13,6 +13,7 @@ builder.Services.AddControllersWithViews(options =>
     options.ModelBindingMessageProvider.SetAttemptedValueIsInvalidAccessor((_, campo) => $"Preencha o campo {campo}.");
 });
 
+// CORS
 var corsOriginsRaw = builder.Configuration["CORS_ALLOWED_ORIGINS"];
 var corsOrigins = (corsOriginsRaw ?? string.Empty)
     .Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
@@ -31,23 +32,26 @@ if (corsOrigins.Length > 0)
     });
 }
 
+// 🔥 CONEXÃO MYSQL
 var (connStr, connSource) = ResolveMySqlConnectionString(builder.Configuration);
 Console.WriteLine($"[config] MySQL connection source: {connSource}");
 
 builder.Services.AddDbContext<AppDbContext>(options =>
     options.UseMySql(
         connStr,
-        ServerVersion.AutoDetect(connStr),
+        new MySqlServerVersion(new Version(8, 0, 0)), // ✅ SEM AutoDetect (evita crash)
         mySqlOptions => mySqlOptions.EnableRetryOnFailure(3)
     )
 );
 
+// Repositórios
 builder.Services.AddScoped<MaterialRepository>();
 builder.Services.AddScoped<ClienteRepository>();
 builder.Services.AddScoped<ProdutoRepository>();
 builder.Services.AddScoped<PedidoRepository>();
 builder.Services.AddScoped<MovimentacaoRepository>();
 
+// Serviços
 builder.Services.AddScoped<EstoqueService>();
 builder.Services.AddScoped<SeedService>();
 
@@ -55,6 +59,7 @@ builder.Services.AddSession();
 
 var app = builder.Build();
 
+// Middleware
 if (app.Environment.IsDevelopment())
 {
     app.UseDeveloperExceptionPage();
@@ -77,6 +82,7 @@ app.MapControllerRoute(
     name: "default",
     pattern: "{controller=Home}/{action=Index}/{id?}");
 
+// 🔥 MIGRATION / SEED CONTROLADO
 var applyMigrationsOnStartup = ReadBool(builder.Configuration["APPLY_MIGRATIONS_ON_STARTUP"], false);
 var seedOnStartup = ReadBool(builder.Configuration["SEED_ON_STARTUP"], !app.Environment.IsProduction());
 
@@ -84,20 +90,33 @@ using (var scope = app.Services.CreateScope())
 {
     var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
 
-    if (applyMigrationsOnStartup)
-        db.Database.Migrate();
-    else
-        db.Database.EnsureCreated();
-
-    if (seedOnStartup)
+    try
     {
-        var seed = scope.ServiceProvider.GetRequiredService<SeedService>();
-        await seed.SeedAsync();
+        if (applyMigrationsOnStartup)
+            db.Database.Migrate();
+        else
+            db.Database.EnsureCreated();
+
+        if (seedOnStartup)
+        {
+            var seed = scope.ServiceProvider.GetRequiredService<SeedService>();
+            await seed.SeedAsync();
+        }
+    }
+    catch (Exception ex)
+    {
+        Console.WriteLine($"[ERROR] Falha ao inicializar banco: {ex.Message}");
+        // ❗ NÃO derruba o app
     }
 }
 
 Console.WriteLine("Liontto Moveis - ASP.NET Core + MySQL");
 app.Run();
+
+
+// =======================
+// 🔥 HELPERS
+// =======================
 
 static (string connectionString, string source) ResolveMySqlConnectionString(IConfiguration config)
 {
@@ -117,7 +136,7 @@ static (string connectionString, string source) ResolveMySqlConnectionString(ICo
     if (!string.IsNullOrWhiteSpace(mysqlPublicUrl))
         return (ConvertMySqlUrlToConnectionString(mysqlPublicUrl), "MYSQL_PUBLIC_URL");
 
-    return (BuildConnectionStringFromParts(config), "MYSQLHOST/MYSQLPORT/MYSQLUSER/MYSQLPASSWORD/MYSQLDATABASE");
+    return (BuildConnectionStringFromParts(config), "MYSQL PARTS");
 }
 
 static string NormalizeConnectionString(string raw)
@@ -131,19 +150,13 @@ static string NormalizeConnectionString(string raw)
 
 static string ConvertMySqlUrlToConnectionString(string mysqlUrl)
 {
-    if (!Uri.TryCreate(mysqlUrl, UriKind.Absolute, out var uri) ||
-        !"mysql".Equals(uri.Scheme, StringComparison.OrdinalIgnoreCase))
-    {
-        throw new InvalidOperationException("MYSQL_URL/MYSQL_PUBLIC_URL invalida. Use formato mysql://usuario:senha@host:porta/database");
-    }
+    var uri = new Uri(mysqlUrl);
 
-    var userInfo = uri.UserInfo.Split(':', 2, StringSplitOptions.None);
-    var user = userInfo.Length > 0 ? Uri.UnescapeDataString(userInfo[0]) : string.Empty;
-    var password = userInfo.Length > 1 ? Uri.UnescapeDataString(userInfo[1]) : string.Empty;
+    var userInfo = uri.UserInfo.Split(':');
+    var user = userInfo[0];
+    var password = userInfo.Length > 1 ? userInfo[1] : "";
+
     var database = uri.AbsolutePath.Trim('/');
-
-    if (string.IsNullOrWhiteSpace(user) || string.IsNullOrWhiteSpace(database))
-        throw new InvalidOperationException("MYSQL_URL/MYSQL_PUBLIC_URL deve conter usuario e database.");
 
     var builder = new MySqlConnectionStringBuilder
     {
@@ -161,29 +174,13 @@ static string ConvertMySqlUrlToConnectionString(string mysqlUrl)
 
 static string BuildConnectionStringFromParts(IConfiguration config)
 {
-    var host = config["MYSQLHOST"];
-    var user = config["MYSQLUSER"];
-    var password = config["MYSQLPASSWORD"] ?? config["MYSQL_ROOT_PASSWORD"];
-    var database = config["MYSQLDATABASE"] ?? config["MYSQL_DATABASE"];
-
-    var portRaw = config["MYSQLPORT"];
-    var port = uint.TryParse(portRaw, out var parsedPort) ? parsedPort : 3306;
-
-    if (string.IsNullOrWhiteSpace(host) ||
-        string.IsNullOrWhiteSpace(user) ||
-        string.IsNullOrWhiteSpace(database))
-    {
-        throw new InvalidOperationException(
-            "Nao foi possivel resolver a conexao MySQL. Defina ConnectionStrings__MySQL, DB_CONNECTION, MYSQL_URL, MYSQL_PUBLIC_URL ou variaveis MYSQLHOST/MYSQLPORT/MYSQLUSER/MYSQLPASSWORD/MYSQLDATABASE.");
-    }
-
     var builder = new MySqlConnectionStringBuilder
     {
-        Server = host,
-        Port = port,
-        UserID = user,
-        Password = password,
-        Database = database,
+        Server = config["MYSQLHOST"],
+        Port = uint.TryParse(config["MYSQLPORT"], out var p) ? p : 3306,
+        UserID = config["MYSQLUSER"],
+        Password = config["MYSQLPASSWORD"] ?? config["MYSQL_ROOT_PASSWORD"],
+        Database = config["MYSQLDATABASE"] ?? config["MYSQL_DATABASE"],
         CharacterSet = "utf8mb4",
         SslMode = MySqlSslMode.Preferred
     };
@@ -198,6 +195,5 @@ static bool ReadBool(string? raw, bool defaultValue)
 
     return raw.Equals("1", StringComparison.OrdinalIgnoreCase) ||
            raw.Equals("true", StringComparison.OrdinalIgnoreCase) ||
-           raw.Equals("yes", StringComparison.OrdinalIgnoreCase) ||
-           raw.Equals("on", StringComparison.OrdinalIgnoreCase);
+           raw.Equals("yes", StringComparison.OrdinalIgnoreCase);
 }
