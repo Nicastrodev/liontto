@@ -6,20 +6,12 @@ using MySqlConnector;
 
 var builder = WebApplication.CreateBuilder(args);
 
-// =======================
-// MVC
-// =======================
-
 builder.Services.AddControllersWithViews(options =>
 {
     options.ModelBindingMessageProvider.SetValueMustNotBeNullAccessor(_ => "Preencha este campo.");
     options.ModelBindingMessageProvider.SetValueIsInvalidAccessor(_ => "Valor invalido para o campo informado.");
     options.ModelBindingMessageProvider.SetAttemptedValueIsInvalidAccessor((_, campo) => $"Preencha o campo {campo}.");
 });
-
-// =======================
-// 🔥 MYSQL (ULTRA SEGURO)
-// =======================
 
 var rawMysqlUrl = builder.Configuration["MYSQL_URL"];
 
@@ -42,7 +34,6 @@ catch (Exception ex)
     throw;
 }
 
-// DbContext
 builder.Services.AddDbContext<AppDbContext>(options =>
     options.UseMySql(
         connectionString,
@@ -53,10 +44,6 @@ builder.Services.AddDbContext<AppDbContext>(options =>
         }
     )
 );
-
-// =======================
-// DI
-// =======================
 
 builder.Services.AddScoped<MaterialRepository>();
 builder.Services.AddScoped<ClienteRepository>();
@@ -70,10 +57,6 @@ builder.Services.AddScoped<SeedService>();
 builder.Services.AddSession();
 
 var app = builder.Build();
-
-// =======================
-// MIDDLEWARE
-// =======================
 
 if (app.Environment.IsDevelopment())
 {
@@ -89,43 +72,28 @@ app.UseStaticFiles();
 app.UseRouting();
 app.UseSession();
 
+app.MapGet("/", () => Results.Ok("API Rodando 🚀"));
+
 app.MapControllerRoute(
     name: "default",
     pattern: "{controller=Home}/{action=Index}/{id?}");
-
-// =======================
-// 🔥 HEALTH CHECK (IMPORTANTE PRO RAILWAY)
-// =======================
-
-app.MapGet("/", () => Results.Ok("API Rodando 🚀"));
-
-// =======================
-// 🔥 INIT DATABASE (NÃO CRASHA)
-// =======================
 
 using (var scope = app.Services.CreateScope())
 {
     try
     {
         var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
-
         db.Database.EnsureCreated();
-
         Console.WriteLine("[DB] Conectado com sucesso");
     }
     catch (Exception ex)
     {
         Console.WriteLine($"[ERRO DB] {ex.Message}");
-        // NÃO derruba o app
     }
 }
 
 Console.WriteLine("🚀 Liontto Moveis rodando!");
 app.Run();
-
-// =======================
-// 🔥 HELPER
-// =======================
 
 static string ConvertMySqlUrlToConnectionString(string mysqlUrl)
 {
@@ -140,7 +108,10 @@ static string ConvertMySqlUrlToConnectionString(string mysqlUrl)
     var database = uri.AbsolutePath.Trim('/');
 
     if (string.IsNullOrWhiteSpace(database))
-        throw new Exception("Database não encontrada na URL");
+    {
+        Console.WriteLine("[WARN] Database não informada, usando 'railway'");
+        database = "railway";
+    }
 
     var builder = new MySqlConnectionStringBuilder
     {
@@ -150,7 +121,7 @@ static string ConvertMySqlUrlToConnectionString(string mysqlUrl)
         Password = password,
         Database = database,
         CharacterSet = "utf8mb4",
-        SslMode = MySqlSslMode.None // 🔥 IMPORTANTE PRO RAILWAY
+        SslMode = MySqlSslMode.None
     };
 
     return builder.ConnectionString;
