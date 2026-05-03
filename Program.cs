@@ -10,7 +10,7 @@ var builder = WebApplication.CreateBuilder(args);
 builder.Services.AddControllersWithViews(options =>
 {
     options.ModelBindingMessageProvider.SetValueMustNotBeNullAccessor(_ => "Preencha este campo.");
-    options.ModelBindingMessageProvider.SetValueIsInvalidAccessor(_ => "Valor invalido para o campo informado.");
+    options.ModelBindingMessageProvider.SetValueIsInvalidAccessor(_ => "Valor inválido para o campo informado.");
     options.ModelBindingMessageProvider.SetAttemptedValueIsInvalidAccessor((_, campo) => $"Preencha o campo {campo}.");
 });
 
@@ -18,30 +18,16 @@ builder.Services.AddControllersWithViews(options =>
 var rawMysqlUrl = builder.Configuration["MYSQL_URL"];
 
 if (string.IsNullOrWhiteSpace(rawMysqlUrl))
-{
-    Console.WriteLine("[ERRO] MYSQL_URL não definida!");
     throw new Exception("MYSQL_URL não encontrada.");
-}
 
-string connectionString;
-
-try
-{
-    connectionString = ConvertMySqlUrlToConnectionString(rawMysqlUrl);
-    Console.WriteLine("[DB] MYSQL_URL convertida com sucesso");
-}
-catch (Exception ex)
-{
-    Console.WriteLine($"[ERRO] Falha ao converter MYSQL_URL: {ex.Message}");
-    throw;
-}
+var connectionString = ConvertMySqlUrlToConnectionString(rawMysqlUrl);
 
 // DbContext
 builder.Services.AddDbContext<AppDbContext>(options =>
     options.UseMySql(
         connectionString,
-        new MySqlServerVersion(new Version(8, 0, 0)),
-        mySqlOptions => mySqlOptions.EnableRetryOnFailure(5)
+        ServerVersion.AutoDetect(connectionString),
+        mySqlOptions => mySqlOptions.EnableRetryOnFailure()
     )
 );
 
@@ -60,29 +46,29 @@ builder.Services.AddSession();
 var app = builder.Build();
 
 // Middleware
-if (app.Environment.IsDevelopment())
-{
-    app.UseDeveloperExceptionPage();
-}
-else
+if (!app.Environment.IsDevelopment())
 {
     app.UseExceptionHandler("/Home/Error");
     app.UseHsts();
+}
+else
+{
+    app.UseDeveloperExceptionPage();
 }
 
 app.UseStaticFiles();
 app.UseRouting();
 app.UseSession();
 
-// HEALTHCHECK (IMPORTANTE PRO RAILWAY)
+// Healthcheck Railway
 app.MapGet("/", () => Results.Ok("OK"));
 
-// Rotas
+// Rotas MVC
 app.MapControllerRoute(
     name: "default",
     pattern: "{controller=Home}/{action=Index}/{id?}");
 
-// Init DB (não derruba app)
+// Init DB (não quebra deploy)
 using (var scope = app.Services.CreateScope())
 {
     try
@@ -93,15 +79,17 @@ using (var scope = app.Services.CreateScope())
     }
     catch (Exception ex)
     {
-        Console.WriteLine($"[ERRO DB] {ex.Message}");
+        Console.WriteLine($"[DB ERROR] {ex.Message}");
     }
 }
 
-// 🔥 ESSENCIAL PRO RAILWAY
+// Railway port fix (CORRETO)
 var port = Environment.GetEnvironmentVariable("PORT") ?? "8080";
+app.Urls.Clear();
 app.Urls.Add($"http://0.0.0.0:{port}");
 
 Console.WriteLine($"🚀 Rodando na porta {port}");
+
 app.Run();
 
 
@@ -116,10 +104,9 @@ static string ConvertMySqlUrlToConnectionString(string mysqlUrl)
     var user = userInfo[0];
     var password = userInfo.Length > 1 ? userInfo[1] : "";
 
-    var database = uri.AbsolutePath.Trim('/');
-
-    if (string.IsNullOrWhiteSpace(database))
-        database = "railway";
+    var database = string.IsNullOrWhiteSpace(uri.AbsolutePath.Trim('/'))
+        ? "railway"
+        : uri.AbsolutePath.Trim('/');
 
     var builder = new MySqlConnectionStringBuilder
     {
@@ -130,7 +117,6 @@ static string ConvertMySqlUrlToConnectionString(string mysqlUrl)
         Database = database,
         CharacterSet = "utf8mb4",
 
-        // 🔥 IMPORTANTE PRO RAILWAY
         SslMode = MySqlSslMode.None,
         AllowPublicKeyRetrieval = true
     };
