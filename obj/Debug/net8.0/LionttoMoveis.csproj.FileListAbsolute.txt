@@ -185,3 +185,12 @@ C:\Users\mathe\OneDrive\Desktop\liontto_mysql\build_tmp\zh-Hans\Microsoft.CodeAn
 C:\Users\mathe\OneDrive\Desktop\liontto_mysql\build_tmp\zh-Hant\Microsoft.CodeAnalysis.Workspaces.resources.dll
 C:\Users\mathe\OneDrive\Desktop\liontto_mysql\build_tmp\package.json
 C:\Users\mathe\OneDrive\Desktop\liontto_mysql\build_tmp\vercel.json
+C:\Users\mathe\OneDrive\Desktop\liontto_mysql\bin\Debug\net8.0\package.json
+C:\Users\mathe\OneDrive\Desktop\liontto_mysql\bin\Debug\net8.0\vercel.json
+C:\Users\mathe\OneDrive\Desktop\liontto_mysql\bin\Debug\net8.0\publish\web.config
+C:\Users\mathe\OneDrive\Desktop\liontto_mysql\bin\Debug\net8.0\publish\appsettings.json
+C:\Users\mathe\OneDrive\Desktop\liontto_mysql\bin\Debug\net8.0\publish\LionttoMoveis.deps.json
+C:\Users\mathe\OneDrive\Desktop\liontto_mysql\bin\Debug\net8.0\publish\LionttoMoveis.runtimeconfig.json
+C:\Users\mathe\OneDrive\Desktop\liontto_mysql\bin\Debug\net8.0\publish\LionttoMoveis.staticwebassets.endpoints.json
+C:\Users\mathe\OneDrive\Desktop\liontto_mysql\bin\Debug\net8.0\publish\package.json
+C:\Users\mathe\OneDrive\Desktop\liontto_mysql\bin\Debug\net8.0\publish\vercel.json

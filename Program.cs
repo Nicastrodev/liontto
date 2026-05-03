@@ -55,7 +55,15 @@ builder.Services.AddSession();
 
 var app = builder.Build();
 
-app.UseDeveloperExceptionPage();
+if (app.Environment.IsDevelopment())
+{
+    app.UseDeveloperExceptionPage();
+}
+else
+{
+    app.UseExceptionHandler("/");
+    app.UseHsts();
+}
 
 app.UseStaticFiles();
 app.UseRouting();
