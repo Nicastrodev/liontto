@@ -6,6 +6,7 @@ using MySqlConnector;
 
 var builder = WebApplication.CreateBuilder(args);
 
+// MVC
 builder.Services.AddControllersWithViews(options =>
 {
     options.ModelBindingMessageProvider.SetValueMustNotBeNullAccessor(_ => "Preencha este campo.");
@@ -13,6 +14,7 @@ builder.Services.AddControllersWithViews(options =>
     options.ModelBindingMessageProvider.SetAttemptedValueIsInvalidAccessor((_, campo) => $"Preencha o campo {campo}.");
 });
 
+// MYSQL
 var rawMysqlUrl = builder.Configuration["MYSQL_URL"];
 
 if (string.IsNullOrWhiteSpace(rawMysqlUrl))
@@ -34,17 +36,16 @@ catch (Exception ex)
     throw;
 }
 
+// DbContext
 builder.Services.AddDbContext<AppDbContext>(options =>
     options.UseMySql(
         connectionString,
         new MySqlServerVersion(new Version(8, 0, 0)),
-        mySqlOptions =>
-        {
-            mySqlOptions.EnableRetryOnFailure(5);
-        }
+        mySqlOptions => mySqlOptions.EnableRetryOnFailure(5)
     )
 );
 
+// DI
 builder.Services.AddScoped<MaterialRepository>();
 builder.Services.AddScoped<ClienteRepository>();
 builder.Services.AddScoped<ProdutoRepository>();
@@ -58,6 +59,7 @@ builder.Services.AddSession();
 
 var app = builder.Build();
 
+// Middleware
 if (app.Environment.IsDevelopment())
 {
     app.UseDeveloperExceptionPage();
@@ -72,12 +74,15 @@ app.UseStaticFiles();
 app.UseRouting();
 app.UseSession();
 
-app.MapGet("/", () => Results.Ok("API Rodando 🚀"));
+// HEALTHCHECK (IMPORTANTE PRO RAILWAY)
+app.MapGet("/", () => Results.Ok("OK"));
 
+// Rotas
 app.MapControllerRoute(
     name: "default",
     pattern: "{controller=Home}/{action=Index}/{id?}");
 
+// Init DB (não derruba app)
 using (var scope = app.Services.CreateScope())
 {
     try
@@ -92,9 +97,15 @@ using (var scope = app.Services.CreateScope())
     }
 }
 
-Console.WriteLine("🚀 Liontto Moveis rodando!");
+// 🔥 ESSENCIAL PRO RAILWAY
+var port = Environment.GetEnvironmentVariable("PORT") ?? "8080";
+app.Urls.Add($"http://0.0.0.0:{port}");
+
+Console.WriteLine($"🚀 Rodando na porta {port}");
 app.Run();
 
+
+// HELPER
 static string ConvertMySqlUrlToConnectionString(string mysqlUrl)
 {
     if (!Uri.TryCreate(mysqlUrl, UriKind.Absolute, out var uri))
@@ -108,10 +119,7 @@ static string ConvertMySqlUrlToConnectionString(string mysqlUrl)
     var database = uri.AbsolutePath.Trim('/');
 
     if (string.IsNullOrWhiteSpace(database))
-    {
-        Console.WriteLine("[WARN] Database não informada, usando 'railway'");
         database = "railway";
-    }
 
     var builder = new MySqlConnectionStringBuilder
     {
@@ -121,7 +129,10 @@ static string ConvertMySqlUrlToConnectionString(string mysqlUrl)
         Password = password,
         Database = database,
         CharacterSet = "utf8mb4",
-        SslMode = MySqlSslMode.None
+
+        // 🔥 IMPORTANTE PRO RAILWAY
+        SslMode = MySqlSslMode.None,
+        AllowPublicKeyRetrieval = true
     };
 
     return builder.ConnectionString;
