@@ -191,3 +191,14 @@ C:\Users\mathe\OneDrive\Desktop\liontto_mysql\bin\Debug\net8.0\publish\LionttoMo
 C:\Users\mathe\OneDrive\Desktop\liontto_mysql\bin\Debug\net8.0\publish\LionttoMoveis.runtimeconfig.json
 C:\Users\mathe\OneDrive\Desktop\liontto_mysql\bin\Debug\net8.0\publish\LionttoMoveis.staticwebassets.endpoints.json
 C:\Users\mathe\OneDrive\Desktop\liontto_mysql\bin\Debug\net8.0\appsettings.Production.json
+C:\Users\mathe\OneDrive\Desktop\liontto_mysql\bin\Debug\net8.0\publish_check\publish\web.config
+C:\Users\mathe\OneDrive\Desktop\liontto_mysql\bin\Debug\net8.0\publish_check\web.config
+C:\Users\mathe\OneDrive\Desktop\liontto_mysql\bin\Debug\net8.0\publish_check\appsettings.json
+C:\Users\mathe\OneDrive\Desktop\liontto_mysql\bin\Debug\net8.0\publish_check\appsettings.Production.json
+C:\Users\mathe\OneDrive\Desktop\liontto_mysql\bin\Debug\net8.0\publish_check\LionttoMoveis.deps.json
+C:\Users\mathe\OneDrive\Desktop\liontto_mysql\bin\Debug\net8.0\publish_check\LionttoMoveis.runtimeconfig.json
+C:\Users\mathe\OneDrive\Desktop\liontto_mysql\bin\Debug\net8.0\publish_check\LionttoMoveis.staticwebassets.endpoints.json
+C:\Users\mathe\OneDrive\Desktop\liontto_mysql\bin\Debug\net8.0\publish_check\publish\appsettings.json
+C:\Users\mathe\OneDrive\Desktop\liontto_mysql\bin\Debug\net8.0\publish_check\publish\LionttoMoveis.deps.json
+C:\Users\mathe\OneDrive\Desktop\liontto_mysql\bin\Debug\net8.0\publish_check\publish\LionttoMoveis.runtimeconfig.json
+C:\Users\mathe\OneDrive\Desktop\liontto_mysql\bin\Debug\net8.0\publish_check\publish\LionttoMoveis.staticwebassets.endpoints.json

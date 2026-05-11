@@ -27,8 +27,9 @@ Opcionalmente, em vez de URL unica, voce pode usar:
 Variaveis opcionais de bootstrap:
 
 - `DB_INIT_ON_STARTUP=true` (padrao)
-- `APPLY_MIGRATIONS_ON_STARTUP=false`
+- `APPLY_MIGRATIONS_ON_STARTUP=true` (recomendado em producao)
 - `SEED_ON_STARTUP=false`
+- `DB_FAIL_FAST_ON_INIT_ERROR=true` (recomendado para nao subir com frontend quebrado por schema ausente)
 
 ### 2) Prioridade de conexao ao banco
 
