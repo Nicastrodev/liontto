@@ -5,74 +5,56 @@ VersÃ£o migrada de **MongoDB â†’ MySQL** usando **Entity Framework Core +
 
 ---
 
-## Deploy com Railway + Vercel
+## Deploy Railway (Frontend + Backend no mesmo servico)
 
-### Arquitetura recomendada
+Este projeto usa ASP.NET Core MVC (Views Razor + `wwwroot`), entao o frontend e o backend rodam no mesmo processo e no mesmo dominio.
 
-- Backend ASP.NET: Railway (ou outro host com suporte .NET)
-- Banco MySQL: Railway
-- Frontend/dominio publico: Vercel (proxy para o backend)
+### 1) Variaveis obrigatorias na Railway
 
-### 1) Variaveis no backend (Railway)
+Defina no servico Web:
 
-Com base nas variaveis que voce enviou, mantenha no servico do backend:
+- `ASPNETCORE_ENVIRONMENT=Production`
+- `MYSQL_URL` **ou** `MYSQL_PUBLIC_URL` (recomendado usar o valor que a propria Railway fornece para o MySQL)
 
-- `MYSQL_URL`
-- `MYSQL_PUBLIC_URL`
+Opcionalmente, em vez de URL unica, voce pode usar:
+
 - `MYSQLHOST`
 - `MYSQLPORT`
 - `MYSQLUSER`
 - `MYSQLPASSWORD`
-- `MYSQL_ROOT_PASSWORD`
-- `MYSQL_DATABASE`
-- `MYSQLDATABASE`
+- `MYSQLDATABASE` (ou `MYSQL_DATABASE`)
 
-Tambem configure:
+Variaveis opcionais de bootstrap:
 
-- `ASPNETCORE_ENVIRONMENT=Production`
-- `SEED_ON_STARTUP=false`
+- `DB_INIT_ON_STARTUP=true` (padrao)
 - `APPLY_MIGRATIONS_ON_STARTUP=false`
-- `CORS_ALLOWED_ORIGINS=https://SEU-PROJETO.vercel.app`
+- `SEED_ON_STARTUP=false`
 
-Observacao: o backend agora resolve conexao automaticamente usando a prioridade:
+### 2) Prioridade de conexao ao banco
 
 1. `ConnectionStrings__MySQL`
 2. `DB_CONNECTION`
 3. `MYSQL_URL`
 4. `MYSQL_PUBLIC_URL`
 5. `MYSQLHOST` + `MYSQLPORT` + `MYSQLUSER` + `MYSQLPASSWORD` + `MYSQLDATABASE`
+6. `ConnectionStrings:MySQL` (fallback local de `appsettings.json`)
 
-### 2) Variavel no frontend (Vercel)
+### 3) Configuracao de deploy
 
-No projeto da Vercel, configure:
+- O deploy pode usar o `Dockerfile` da raiz.
+- O container expoe a porta `8080` e tambem respeita `PORT` da Railway no runtime.
+- Configure o **Healthcheck Path** da Railway para `/health`.
 
-- `BACKEND_ORIGIN=https://URL-PUBLICA-DO-BACKEND`
+### 4) Checklist de validacao apos deploy
 
-Exemplo:
-
-```bash
-BACKEND_ORIGIN=https://liontto-backend.up.railway.app
-```
-
-### 3) Arquivos de deploy usados
-
-- `vercel.json` (rewrites e headers)
-- `api/proxy.js` (proxy para backend)
-- `.vercelignore` (evita upload de arquivos .NET no deploy da Vercel)
-- `package.json` (runtime Node para a function)
-
-### 4) Proximo passo (ordem correta)
-
-1. Suba/valide o backend no Railway.
-2. Confirme que a rota publica do backend responde (ex: `https://SEU_BACKEND/`).
-3. Configure `CORS_ALLOWED_ORIGINS` no backend com o dominio da Vercel.
-4. Configure `BACKEND_ORIGIN` na Vercel apontando para o backend.
-5. Rode deploy da Vercel.
-6. Teste criar/editar/excluir no frontend publicado.
+1. Abrir `https://SEU_DOMINIO_RAILWAY/health` e confirmar `200` com `{\"status\":\"ok\"}`.
+2. Abrir `https://SEU_DOMINIO_RAILWAY/` e verificar carregamento da Home (Dashboard).
+3. Navegar em `Materiais`, `Clientes`, `Produtos` e `Pedidos` para validar frontend + backend integrados.
+4. Validar leitura/escrita no banco (criar, editar e excluir registros).
 
 ### 5) Seguranca imediata
 
-Como a senha root do MySQL foi compartilhada em texto, gere uma nova senha no Railway e atualize as variaveis dependentes antes do go-live.
+Se credenciais de banco foram expostas em algum momento, gere nova senha no MySQL da Railway e atualize as variaveis dependentes antes de ir para producao.
 
 ---
 ## ðŸ› ï¸ PrÃ©-requisitos
