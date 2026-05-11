@@ -1,4 +1,4 @@
-using LionttoMoveis.Data;
+﻿using LionttoMoveis.Data;
 using LionttoMoveis.Repository;
 using LionttoMoveis.Services;
 using Microsoft.AspNetCore.Diagnostics;
@@ -9,16 +9,17 @@ using MySqlConnector;
 var builder = WebApplication.CreateBuilder(args);
 
 var port = Environment.GetEnvironmentVariable("PORT") ?? "8080";
+
 builder.WebHost.UseUrls($"http://0.0.0.0:{port}");
 
 builder.Services.AddControllersWithViews(options =>
 {
     options.ModelBindingMessageProvider.SetValueMustNotBeNullAccessor(_ => "Preencha este campo.");
-    options.ModelBindingMessageProvider.SetValueIsInvalidAccessor(_ => "Valor invalido para o campo informado.");
-    options.ModelBindingMessageProvider.SetAttemptedValueIsInvalidAccessor((_, campo) => $"Preencha o campo {campo}.");
+    options.ModelBindingMessageProvider.SetValueIsInvalidAccessor(_ => "Valor inválido.");
 });
 
 builder.Services.AddDistributedMemoryCache();
+
 builder.Services.AddSession(options =>
 {
     options.Cookie.HttpOnly = true;
@@ -31,37 +32,37 @@ builder.Services.Configure<ForwardedHeadersOptions>(options =>
 {
     options.ForwardedHeaders =
         ForwardedHeaders.XForwardedFor |
-        ForwardedHeaders.XForwardedProto |
-        ForwardedHeaders.XForwardedHost;
+        ForwardedHeaders.XForwardedProto;
 
     options.KnownNetworks.Clear();
     options.KnownProxies.Clear();
 });
 
-var resolvedConnection = ResolveMySqlConnectionString(builder.Configuration);
+var connectionString = ResolveConnectionString(builder.Configuration);
 
-if (string.IsNullOrWhiteSpace(resolvedConnection.ConnectionString))
-{
-    throw new InvalidOperationException(
-        "Nenhuma configuracao de banco foi encontrada. Configure ConnectionStrings__MySQL, MYSQL_URL, MYSQL_PUBLIC_URL ou MYSQLHOST/MYSQLPORT/MYSQLUSER/MYSQLPASSWORD/MYSQLDATABASE.");
-}
-
-var connectionString = resolvedConnection.ConnectionString;
-Console.WriteLine($"[DB] Connection source: {resolvedConnection.Source}");
+Console.WriteLine("[DB] Connection String carregada.");
 
 builder.Services.AddDbContext<AppDbContext>(options =>
+{
     options.UseMySql(
         connectionString,
-        new MySqlServerVersion(new Version(8, 0, 0)),
-        mySqlOptions => mySqlOptions.EnableRetryOnFailure(3, TimeSpan.FromSeconds(3), null)
-    )
-);
+        ServerVersion.AutoDetect(connectionString),
+        mysql =>
+        {
+            mysql.EnableRetryOnFailure(
+                5,
+                TimeSpan.FromSeconds(10),
+                null
+            );
+        });
+});
 
 builder.Services.AddScoped<MaterialRepository>();
 builder.Services.AddScoped<ClienteRepository>();
 builder.Services.AddScoped<ProdutoRepository>();
 builder.Services.AddScoped<PedidoRepository>();
 builder.Services.AddScoped<MovimentacaoRepository>();
+
 builder.Services.AddScoped<EstoqueService>();
 builder.Services.AddScoped<SeedService>();
 
@@ -75,199 +76,141 @@ if (!app.Environment.IsDevelopment())
     {
         errorApp.Run(async context =>
         {
-            context.Response.StatusCode = StatusCodes.Status500InternalServerError;
+            context.Response.StatusCode = 500;
             context.Response.ContentType = "application/json";
 
             var feature = context.Features.Get<IExceptionHandlerFeature>();
-            var detail = feature?.Error?.Message ?? "Unexpected server error.";
+
             await context.Response.WriteAsJsonAsync(new
             {
                 error = "Internal server error.",
-                detail
+                detail = feature?.Error?.Message
             });
         });
     });
+
     app.UseHsts();
-}
-else
-{
-    app.UseDeveloperExceptionPage();
 }
 
 app.UseStaticFiles();
+
 app.UseRouting();
+
 app.UseSession();
 
-app.MapGet("/health", () => Results.Ok(new { status = "ok" }));
-app.MapGet("/health/db", async (AppDbContext db, CancellationToken ct) =>
+app.MapGet("/health", () =>
 {
-    var canConnect = await db.Database.CanConnectAsync(ct);
-    return canConnect
-        ? Results.Ok(new { status = "ok", database = "up" })
-        : Results.StatusCode(StatusCodes.Status503ServiceUnavailable);
+    return Results.Ok(new
+    {
+        status = "ok"
+    });
 });
 
 app.MapControllerRoute(
     name: "default",
     pattern: "{controller=Home}/{action=Index}/{id?}");
+
 app.MapControllers();
 
-app.Lifetime.ApplicationStarted.Register(() =>
+
+// ==========================
+// CRIA DATABASE/TABELAS
+// ==========================
+
+using (var scope = app.Services.CreateScope())
 {
-    _ = Task.Run(async () => await InitializeDatabaseAsync(app, builder.Configuration));
-});
-
-Console.WriteLine($"[STARTUP] Listening on http://0.0.0.0:{port}");
-
-app.Run();
-
-static async Task InitializeDatabaseAsync(WebApplication app, IConfiguration configuration)
-{
-    var shouldInitDb = configuration.GetValue("DB_INIT_ON_STARTUP", true);
-    var shouldApplyMigrations = configuration.GetValue("APPLY_MIGRATIONS_ON_STARTUP", false);
-    var shouldSeed = configuration.GetValue("SEED_ON_STARTUP", false);
-
-    if (!shouldInitDb)
-    {
-        Console.WriteLine("[DB] Startup initialization skipped (DB_INIT_ON_STARTUP=false).");
-        return;
-    }
-
-    using var scope = app.Services.CreateScope();
-
     try
     {
         var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
 
-        if (shouldApplyMigrations)
-        {
-            await db.Database.MigrateAsync();
-            Console.WriteLine("[DB] Migrations applied successfully.");
-        }
-        else
-        {
-            await db.Database.EnsureCreatedAsync();
-            Console.WriteLine("[DB] EnsureCreated executed successfully.");
-        }
+        Console.WriteLine("[DB] Criando estrutura do banco...");
 
-        if (shouldSeed)
-        {
-            var seedService = scope.ServiceProvider.GetRequiredService<SeedService>();
-            await seedService.SeedAsync();
-            Console.WriteLine("[DB] Seed executed successfully.");
-        }
+        await db.Database.EnsureCreatedAsync();
+
+        Console.WriteLine("[DB] Banco criado com sucesso.");
+
+        var seed = scope.ServiceProvider.GetRequiredService<SeedService>();
+
+        await seed.SeedAsync();
+
+        Console.WriteLine("[DB] Seed executado.");
     }
     catch (Exception ex)
     {
-        Console.WriteLine($"[DB WARNING] Initialization failed, app will continue running. Error: {ex.Message}");
+        Console.WriteLine("[DB ERROR]");
+        Console.WriteLine(ex.Message);
     }
 }
 
-static (string? ConnectionString, string Source) ResolveMySqlConnectionString(IConfiguration configuration)
+Console.WriteLine($"[STARTUP] Running on port {port}");
+
+app.Run();
+
+
+// ======================================
+// CONNECTION STRING
+// ======================================
+
+static string ResolveConnectionString(IConfiguration config)
 {
-    var explicitConnection = configuration["ConnectionStrings__MySQL"];
-    if (!string.IsNullOrWhiteSpace(explicitConnection))
-        return (explicitConnection, "ConnectionStrings__MySQL");
+    var mysqlUrl =
+        config["MYSQL_URL"] ??
+        config["MYSQL_PUBLIC_URL"];
 
-    var dbConnection = configuration["DB_CONNECTION"];
-    if (!string.IsNullOrWhiteSpace(dbConnection))
-        return (dbConnection, "DB_CONNECTION");
-
-    var mysqlUrl = configuration["MYSQL_URL"];
     if (!string.IsNullOrWhiteSpace(mysqlUrl))
-        return (ConvertMySqlUrlToConnectionString(mysqlUrl), "MYSQL_URL");
-
-    var mysqlPublicUrl = configuration["MYSQL_PUBLIC_URL"];
-    if (!string.IsNullOrWhiteSpace(mysqlPublicUrl))
-        return (ConvertMySqlUrlToConnectionString(mysqlPublicUrl), "MYSQL_PUBLIC_URL");
-
-    var host = configuration["MYSQLHOST"];
-    var user = configuration["MYSQLUSER"];
-    var password = configuration["MYSQLPASSWORD"];
-    var database = configuration["MYSQLDATABASE"] ?? configuration["MYSQL_DATABASE"];
-
-    if (!string.IsNullOrWhiteSpace(host) &&
-        !string.IsNullOrWhiteSpace(user) &&
-        !string.IsNullOrWhiteSpace(database))
     {
-        var portRaw = configuration["MYSQLPORT"];
-        var hasPort = uint.TryParse(portRaw, out var parsedPort);
+        return ConvertMySqlUrl(mysqlUrl);
+    }
 
-        var fromParts = new MySqlConnectionStringBuilder
+    var host = config["MYSQLHOST"];
+    var port = config["MYSQLPORT"];
+    var database = config["MYSQLDATABASE"];
+    var user = config["MYSQLUSER"];
+    var password = config["MYSQLPASSWORD"];
+
+    if (!string.IsNullOrWhiteSpace(host))
+    {
+        return new MySqlConnectionStringBuilder
         {
             Server = host,
-            Port = hasPort ? parsedPort : 3306,
-            UserID = user,
-            Password = password ?? string.Empty,
+            Port = uint.Parse(port ?? "3306"),
             Database = database,
+            UserID = user,
+            Password = password,
+            SslMode = MySqlSslMode.Required,
             CharacterSet = "utf8mb4",
-            SslMode = MySqlSslMode.Preferred,
             AllowPublicKeyRetrieval = true
-        };
-
-        return (fromParts.ConnectionString, "MYSQLHOST/MYSQLPORT/MYSQLUSER/MYSQLPASSWORD/MYSQLDATABASE");
+        }.ConnectionString;
     }
 
-    var appSettingsConnection = configuration.GetConnectionString("MySQL");
-    if (!string.IsNullOrWhiteSpace(appSettingsConnection))
-        return (appSettingsConnection, "ConnectionStrings:MySQL");
+    var fallback =
+        config.GetConnectionString("MySQL");
 
-    return (null, "not-found");
+    if (!string.IsNullOrWhiteSpace(fallback))
+    {
+        return fallback;
+    }
+
+    throw new Exception("Nenhuma connection string encontrada.");
 }
 
-static string ConvertMySqlUrlToConnectionString(string mysqlUrl)
+static string ConvertMySqlUrl(string url)
 {
-    if (!Uri.TryCreate(mysqlUrl, UriKind.Absolute, out var uri))
-        throw new InvalidOperationException("MYSQL_URL/MYSQL_PUBLIC_URL invalida.");
+    var uri = new Uri(url);
 
-    var userInfo = uri.UserInfo.Split(':', 2);
-    var user = userInfo.Length > 0 ? Uri.UnescapeDataString(userInfo[0]) : string.Empty;
-    var password = userInfo.Length > 1 ? Uri.UnescapeDataString(userInfo[1]) : string.Empty;
+    var userInfo = uri.UserInfo.Split(':');
 
-    var database = string.IsNullOrWhiteSpace(uri.AbsolutePath.Trim('/'))
-        ? "railway"
-        : Uri.UnescapeDataString(uri.AbsolutePath.Trim('/'));
+    var database = uri.AbsolutePath.Trim('/');
 
-    var sslMode = ParseSslMode(uri.Query);
-
-    var csBuilder = new MySqlConnectionStringBuilder
+    return new MySqlConnectionStringBuilder
     {
         Server = uri.Host,
-        Port = (uint)(uri.IsDefaultPort ? 3306 : uri.Port),
-        UserID = user,
-        Password = password,
+        Port = (uint)uri.Port,
         Database = database,
+        UserID = Uri.UnescapeDataString(userInfo[0]),
+        Password = Uri.UnescapeDataString(userInfo[1]),
+        SslMode = MySqlSslMode.Required,
         CharacterSet = "utf8mb4",
-        SslMode = sslMode,
         AllowPublicKeyRetrieval = true
-    };
-
-    return csBuilder.ConnectionString;
-}
-
-static MySqlSslMode ParseSslMode(string queryString)
-{
-    if (string.IsNullOrWhiteSpace(queryString))
-        return MySqlSslMode.Preferred;
-
-    var query = queryString.TrimStart('?')
-        .Split('&', StringSplitOptions.RemoveEmptyEntries)
-        .Select(pair => pair.Split('=', 2))
-        .Where(parts => parts.Length == 2)
-        .ToDictionary(
-            parts => parts[0].ToLowerInvariant(),
-            parts => Uri.UnescapeDataString(parts[1]).ToLowerInvariant());
-
-    if (!query.TryGetValue("sslmode", out var mode))
-        return MySqlSslMode.Preferred;
-
-    return mode switch
-    {
-        "none" => MySqlSslMode.None,
-        "preferred" => MySqlSslMode.Preferred,
-        "required" => MySqlSslMode.Required,
-        "verifyca" => MySqlSslMode.VerifyCA,
-        "verifyfull" => MySqlSslMode.VerifyFull,
-        _ => MySqlSslMode.Preferred
-    };
+    }.ConnectionString;
 }
