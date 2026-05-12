@@ -4,36 +4,44 @@
 @{ var ptBR = new System.Globalization.CultureInfo("pt-BR"); }
 
 <div class="card" style="max-width:820px;">
-    <form method="post" action="/Pedidos/Novo" id="form-pedido">
+    <form method="post" asp-action="Novo" asp-controller="Pedidos" id="form-pedido" novalidate>
         @Html.AntiForgeryToken()
+        <div asp-validation-summary="ModelOnly"></div>
+
         <div class="form-grid">
             <div class="form-group" style="grid-column:1/-1;">
-                <label>Cliente *</label>
-                <select name="ClienteId" required>
-                    <option value="">Selecione o cliente...</option>
+                <label asp-for="ClienteId">Cliente *</label>
+                <select asp-for="ClienteId" name="ClienteId">
+                    <option value="0">Selecione o cliente...</option>
                     @foreach (var c in Model.Clientes)
                     {
-                        <option value="@c.Id">@c.Nome — @(string.IsNullOrEmpty(c.Telefone) ? c.Email : c.Telefone)</option>
+                        <option value="@c.Id">@c.Nome - @(string.IsNullOrWhiteSpace(c.Telefone) ? c.Email : c.Telefone)</option>
                     }
                 </select>
-                <span class="text-muted" style="font-size:12px;margin-top:4px;display:block;">
-                    Não encontrou? <a href="/Clientes/Novo" target="_blank" style="color:var(--accent);">Cadastrar novo cliente</a>
-                </span>
+                <span class="form-hint">Nao encontrou? <a href="/Clientes/Novo" target="_blank" style="color:var(--accent);">Cadastrar cliente</a></span>
+                <span asp-validation-for="ClienteId"></span>
             </div>
             <div class="form-group">
-                <label>Data de Entrega Prevista</label>
-                <input type="date" name="DataEntregaPrevista"/>
+                <label asp-for="DataEntregaPrevista">Data de Entrega Prevista</label>
+                <input asp-for="DataEntregaPrevista" type="date" name="DataEntregaPrevista"/>
+                <span class="form-hint">Opcional.</span>
+                <span asp-validation-for="DataEntregaPrevista"></span>
             </div>
             <div class="form-group">
-                <label>Observações</label>
-                <textarea name="Observacoes" placeholder="Anotações gerais sobre o pedido..."></textarea>
+                <label asp-for="Observacoes">Observacoes</label>
+                <textarea asp-for="Observacoes" name="Observacoes" placeholder="Anotacoes gerais sobre o pedido"></textarea>
+                <span class="form-hint">Opcional.</span>
+                <span asp-validation-for="Observacoes"></span>
             </div>
         </div>
 
         <div class="divider"></div>
         <div class="mb-3">
             <strong>Produtos do Pedido</strong>
-            <span class="text-muted" style="display:block;font-size:12px;margin-top:4px;">Adicione os móveis deste pedido</span>
+            <span class="form-hint">Adicione os produtos e quantidades.</span>
+            @Html.ValidationMessage("ProdIds", null, new { @class = "field-validation-error" })
+            @Html.ValidationMessage("ProdQtds", null, new { @class = "field-validation-error" })
+            @Html.ValidationMessage("ProdPers", null, new { @class = "field-validation-error" })
         </div>
 
         <div id="produtos-lista">
@@ -45,30 +53,30 @@
                             <option value="">Selecione o produto...</option>
                             @foreach (var p in Model.Produtos)
                             {
-                                <option value="@p.Id" data-preco="@p.PrecoBase">@p.Nome — @p.PrecoBase.ToString("C", ptBR)</option>
+                                <option value="@p.Id" data-preco="@p.PrecoBase">@p.Nome - @p.PrecoBase.ToString("C", ptBR)</option>
                             }
                         </select>
                     </div>
                     <div class="form-group" style="margin-bottom:0;">
-                        <label>Quantidade</label>
+                        <label>Quantidade *</label>
                         <input type="number" name="ProdQtds" value="1" min="1" class="prod-qtd" onchange="calcularTotal()"/>
                     </div>
                     <div class="form-group" style="margin-bottom:0;">
-                        <label>Personalização</label>
-                        <input type="text" name="ProdPers" placeholder="Ex: Cor branco, 1,20m..."/>
+                        <label>Personalizacao</label>
+                        <input type="text" name="ProdPers" placeholder="Ex: Cor branca, 1,20m"/>
+                        <span class="form-hint">Opcional.</span>
                     </div>
                 </div>
-                <button type="button" onclick="this.closest('.produto-row').remove();calcularTotal();" class="btn btn-danger btn-sm mt-3">✕ Remover</button>
+                <button type="button" onclick="this.closest('.produto-row').remove();calcularTotal();" class="btn btn-danger btn-sm mt-3">Remover</button>
             </div>
         </div>
 
-        @* Fonte de options para o JS *@
         <div id="options-source" style="display:none;">
             @foreach (var p in Model.Produtos)
-            {<option value="@p.Id" data-preco="@p.PrecoBase">@p.Nome — @p.PrecoBase.ToString("C", ptBR)</option>}
+            {<option value="@p.Id" data-preco="@p.PrecoBase">@p.Nome - @p.PrecoBase.ToString("C", ptBR)</option>}
         </div>
 
-        <button type="button" onclick="adicionarProduto()" class="btn btn-outline btn-sm mb-4">➕ Adicionar Produto</button>
+        <button type="button" onclick="adicionarProduto()" class="btn btn-outline btn-sm mb-4">Adicionar Produto</button>
 
         <div class="card" style="background:var(--bg);padding:16px;margin-bottom:20px;">
             <div class="flex justify-between items-center">
@@ -79,7 +87,7 @@
 
         <div class="divider"></div>
         <div class="flex gap-2">
-            <button type="submit" class="btn btn-primary">✅ Criar Pedido</button>
+            <button type="submit" class="btn btn-primary">Criar Pedido</button>
             <a href="/Pedidos" class="btn btn-outline">Cancelar</a>
         </div>
     </form>
@@ -101,15 +109,16 @@ function adicionarProduto() {
                 </select>
             </div>
             <div class="form-group" style="margin-bottom:0;">
-                <label>Quantidade</label>
+                <label>Quantidade *</label>
                 <input type="number" name="ProdQtds" value="1" min="1" class="prod-qtd" onchange="calcularTotal()"/>
             </div>
             <div class="form-group" style="margin-bottom:0;">
-                <label>Personalização</label>
-                <input type="text" name="ProdPers" placeholder="Ex: Cor branco, 1,20m..."/>
+                <label>Personalizacao</label>
+                <input type="text" name="ProdPers" placeholder="Ex: Cor branca, 1,20m"/>
+                <span class="form-hint">Opcional.</span>
             </div>
         </div>
-        <button type="button" onclick="this.closest('.produto-row').remove();calcularTotal();" class="btn btn-danger btn-sm mt-3">✕ Remover</button>`;
+        <button type="button" onclick="this.closest('.produto-row').remove();calcularTotal();" class="btn btn-danger btn-sm mt-3">Remover</button>`;
     document.getElementById('produtos-lista').appendChild(row);
 }
 

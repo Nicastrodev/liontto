@@ -3,35 +3,42 @@
 @{ ViewData["Title"] = "Editar Produto"; }
 
 <div class="card" style="max-width:820px;">
-    <form method="post" action="/Produtos/Editar/@Model.Produto.Id" id="form-produto">
+    <form method="post" action="/Produtos/Editar/@Model.Produto.Id" id="form-produto" novalidate>
         @Html.AntiForgeryToken()
+        <div asp-validation-summary="ModelOnly"></div>
+
         <input type="hidden" name="CriadoEm" value="@Model.Produto.CriadoEm.ToString("o")"/>
 
         <div class="form-grid">
             <div class="form-group" style="grid-column:1/-1;">
                 <label>Nome do Produto *</label>
-                <input type="text" name="Nome" value="@Model.Produto.Nome" required/>
+                <input type="text" name="Nome" value="@Model.Produto.Nome"/>
+                @Html.ValidationMessage("Nome", null, new { @class = "field-validation-error" })
             </div>
             <div class="form-group" style="grid-column:1/-1;">
-                <label>Descrição</label>
-                <textarea name="Descricao_">@Model.Produto.Descricao_</textarea>
+                <label>Descricao</label>
+                <textarea name="Descricao_" placeholder="Medidas, acabamento, observacoes tecnicas">@Model.Produto.Descricao_</textarea>
+                <span class="form-hint">Opcional.</span>
+                @Html.ValidationMessage("Descricao_", null, new { @class = "field-validation-error" })
             </div>
             <div class="form-group">
-                <label>Preço Base (R$)</label>
+                <label>Preco Base (R$) *</label>
                 <input type="number" name="PrecoBase" value="@Model.Produto.PrecoBase" min="0" step="0.01"/>
+                @Html.ValidationMessage("PrecoBase", null, new { @class = "field-validation-error" })
             </div>
             <div class="form-group">
-                <label>Tempo de Produção (dias)</label>
+                <label>Tempo de Producao (dias) *</label>
                 <input type="number" name="TempoProducaoDias" value="@Model.Produto.TempoProducaoDias" min="1"/>
+                @Html.ValidationMessage("TempoProducaoDias", null, new { @class = "field-validation-error" })
             </div>
         </div>
 
         <div class="divider"></div>
         <div class="mb-3">
-            <strong>Materiais Necessários</strong>
-            <span class="text-muted" style="display:block;font-size:12px;margin-top:4px;">
-                Materiais consumidos na fabricação deste produto
-            </span>
+            <strong>Materiais Necessarios</strong>
+            <span class="form-hint">Adicione ao menos um material e a quantidade utilizada.</span>
+            @Html.ValidationMessage("matIds", null, new { @class = "field-validation-error" })
+            @Html.ValidationMessage("matQtds", null, new { @class = "field-validation-error" })
         </div>
 
         <div id="materiais-lista">
@@ -42,7 +49,6 @@
                     <div class="material-row flex gap-2 mb-3" style="align-items:center;">
                         <select name="matIds" style="flex:2;">
                             <option value="">Selecione...</option>
-                            @* CORREÇÃO: if separado — Razor Tag Helper não aceita ternário em atributos *@
                             @foreach (var m in Model.Materiais)
                             {
                                 if (m.Id == mat.MaterialId)
@@ -55,9 +61,8 @@
                                 }
                             }
                         </select>
-                        <input type="number" name="matQtds" value="@mat.QuantidadeNecessaria"
-                               min="0.01" step="0.01" style="flex:1;"/>
-                        <button type="button" onclick="this.parentElement.remove()" class="btn btn-danger btn-sm">✕</button>
+                        <input type="number" name="matQtds" value="@mat.QuantidadeNecessaria" min="0.01" step="0.01" style="flex:1;"/>
+                        <button type="button" onclick="this.parentElement.remove()" class="btn btn-danger btn-sm">Remover</button>
                     </div>
                 }
             }
@@ -72,7 +77,7 @@
                         }
                     </select>
                     <input type="number" name="matQtds" placeholder="Quantidade" min="0.01" step="0.01" style="flex:1;"/>
-                    <button type="button" onclick="this.parentElement.remove()" class="btn btn-danger btn-sm">✕</button>
+                    <button type="button" onclick="this.parentElement.remove()" class="btn btn-danger btn-sm">Remover</button>
                 </div>
             }
         </div>
@@ -84,11 +89,11 @@
             }
         </div>
 
-        <button type="button" onclick="adicionarLinha()" class="btn btn-outline btn-sm mb-4">➕ Adicionar Material</button>
+        <button type="button" onclick="adicionarLinha()" class="btn btn-outline btn-sm mb-4">Adicionar Material</button>
 
         <div class="divider"></div>
         <div class="flex gap-2">
-            <button type="submit" class="btn btn-primary">💾 Salvar Alterações</button>
+            <button type="submit" class="btn btn-primary">Salvar Alteracoes</button>
             <a href="/Produtos" class="btn btn-outline">Cancelar</a>
         </div>
     </form>
@@ -106,7 +111,7 @@ function adicionarLinha() {
             <option value="">Selecione o material...</option>${options}
         </select>
         <input type="number" name="matQtds" placeholder="Quantidade" min="0.01" step="0.01" style="flex:1;"/>
-        <button type="button" onclick="this.parentElement.remove()" class="btn btn-danger btn-sm">✕</button>`;
+        <button type="button" onclick="this.parentElement.remove()" class="btn btn-danger btn-sm">Remover</button>`;
     document.getElementById('materiais-lista').appendChild(row);
 }
 </script>

@@ -40,7 +40,7 @@ namespace LionttoMoveis.Controllers
 
             if (!ModelState.IsValid)
             {
-                TempData["Erro"] = ObterPrimeiroErroModelState() ?? "Preencha os campos obrigatorios.";
+                TempData["Erro"] = ObterPrimeiroErroModelState() ?? "Preencha os campos destacados e tente novamente.";
                 return View(material);
             }
 
@@ -67,7 +67,7 @@ namespace LionttoMoveis.Controllers
 
             if (!ModelState.IsValid)
             {
-                TempData["Erro"] = ObterPrimeiroErroModelState() ?? "Preencha os campos obrigatorios.";
+                TempData["Erro"] = ObterPrimeiroErroModelState() ?? "Preencha os campos destacados e tente novamente.";
                 material.Id = id;
                 material.CriadoEm = existente.CriadoEm;
                 material.Quantidade = existente.Quantidade;
@@ -98,7 +98,7 @@ namespace LionttoMoveis.Controllers
         {
             if (!ModelState.IsValid)
             {
-                TempData["Erro"] = ObterPrimeiroErroModelState() ?? "Dados invalidos para movimentacao.";
+                TempData["Erro"] = ObterPrimeiroErroModelState() ?? "Confira os dados da movimentacao e tente novamente.";
                 return RedirectToAction(nameof(Movimentar), new { id });
             }
 
@@ -108,7 +108,7 @@ namespace LionttoMoveis.Controllers
                 return RedirectToAction(nameof(Movimentar), new { id });
             }
 
-            vm.Motivo = (vm.Motivo ?? string.Empty).Trim();
+            vm.Motivo = NormalizarOpcional(vm.Motivo);
 
             var erro = await _estoqueService.MovimentarAsync(id, tipo, vm.Quantidade, vm.Motivo);
 
@@ -139,6 +139,14 @@ namespace LionttoMoveis.Controllers
         {
             material.Nome = (material.Nome ?? string.Empty).Trim();
             material.Unidade = (material.Unidade ?? string.Empty).Trim();
+        }
+
+        private static string? NormalizarOpcional(string? texto)
+        {
+            if (string.IsNullOrWhiteSpace(texto))
+                return null;
+
+            return texto.Trim();
         }
 
         private string? ObterPrimeiroErroModelState()

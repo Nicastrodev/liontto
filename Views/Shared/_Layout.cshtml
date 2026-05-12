@@ -90,6 +90,36 @@
         input:focus,select:focus,textarea:focus { border-color:var(--accent); box-shadow:0 0 0 3px rgba(212,168,83,.15); }
         textarea { resize:vertical; min-height:80px; }
         .form-grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(220px,1fr)); gap:16px; }
+        .form-hint { color:var(--text-muted); font-size:12px; margin-top:6px; display:block; }
+        .validation-summary-errors {
+            background:rgba(181,48,48,.1);
+            color:var(--danger);
+            border:1px solid rgba(181,48,48,.35);
+            border-radius:10px;
+            padding:10px 14px;
+            margin-bottom:16px;
+            font-size:13px;
+        }
+        .validation-summary-errors ul { margin:0; padding-left:18px; }
+        .validation-summary-valid { display:none; }
+        .field-validation-error {
+            color:var(--danger);
+            font-size:12px;
+            margin-top:6px;
+            display:block;
+            font-weight:600;
+        }
+        .input-validation-error,
+        select.input-validation-error,
+        textarea.input-validation-error {
+            border-color:var(--danger);
+            background:rgba(181,48,48,.03);
+        }
+        .input-validation-error:focus,
+        select.input-validation-error:focus,
+        textarea.input-validation-error:focus {
+            box-shadow:0 0 0 3px rgba(181,48,48,.15);
+        }
 
         /* ALERTS */
         .flash-messages { margin-bottom:20px; }
@@ -265,7 +295,17 @@ window.addEventListener('resize', () => {
 document.addEventListener('keydown', (e) => {
     if (e.key === 'Escape') fecharMenuMobile();
 });
+
+document.addEventListener('DOMContentLoaded', function () {
+    const firstInvalid = document.querySelector('.input-validation-error');
+    if (firstInvalid) {
+        firstInvalid.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    }
+});
 </script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.7.1/jquery.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jquery-validate/1.20.0/jquery.validate.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jquery-validation-unobtrusive/3.2.12/jquery.validate.unobtrusive.min.js"></script>
 @RenderSection("Scripts", required: false)
 
 <!-- VLibras: plugin oficial de acessibilidade em Libras (Gov. Federal) -->

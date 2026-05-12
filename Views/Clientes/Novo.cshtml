@@ -3,29 +3,39 @@
 @{ ViewData["Title"] = "Novo Cliente"; }
 
 <div class="card" style="max-width:620px;">
-    <form method="post" action="/Clientes/Novo">
+    <form method="post" asp-action="Novo" asp-controller="Clientes" novalidate>
         @Html.AntiForgeryToken()
+        <div asp-validation-summary="ModelOnly"></div>
+
         <div class="form-grid">
             <div class="form-group" style="grid-column:1/-1;">
-                <label>Nome Completo *</label>
-                <input type="text" name="Nome" value="@Model?.Nome" required placeholder="Ex: João da Silva"/>
+                <label asp-for="Nome">Nome Completo *</label>
+                <input asp-for="Nome" placeholder="Ex: Joao da Silva" autocomplete="name"/>
+                <span asp-validation-for="Nome"></span>
             </div>
             <div class="form-group">
-                <label>Telefone</label>
-                <input type="text" name="Telefone" value="@Model?.Telefone" placeholder="(11) 99999-0000"/>
+                <label asp-for="Telefone">Telefone</label>
+                <input asp-for="Telefone" placeholder="(11) 99999-0000" autocomplete="tel"/>
+                <span class="form-hint">Opcional.</span>
+                <span asp-validation-for="Telefone"></span>
             </div>
             <div class="form-group">
-                <label>E-mail</label>
-                <input type="email" name="Email" value="@Model?.Email" placeholder="cliente@email.com"/>
+                <label asp-for="Email">E-mail</label>
+                <input asp-for="Email" placeholder="cliente@email.com" autocomplete="email"/>
+                <span class="form-hint">Opcional.</span>
+                <span asp-validation-for="Email"></span>
             </div>
             <div class="form-group" style="grid-column:1/-1;">
-                <label>Endereço</label>
-                <input type="text" name="Endereco" value="@Model?.Endereco" placeholder="Rua, número, bairro — Cidade/UF"/>
+                <label asp-for="Endereco">Endereco</label>
+                <input asp-for="Endereco" placeholder="Rua, numero, bairro - Cidade/UF" autocomplete="street-address"/>
+                <span class="form-hint">Opcional.</span>
+                <span asp-validation-for="Endereco"></span>
             </div>
         </div>
+
         <div class="divider"></div>
         <div class="flex gap-2">
-            <button type="submit" class="btn btn-primary">💾 Salvar</button>
+            <button type="submit" class="btn btn-primary">Salvar</button>
             <a href="/Clientes" class="btn btn-outline">Cancelar</a>
         </div>
     </form>

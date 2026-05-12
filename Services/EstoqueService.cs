@@ -29,7 +29,7 @@ namespace LionttoMoveis.Services
             int materialId,
             TipoMovimentacao tipo,
             double quantidade,
-            string motivo)
+            string? motivo)
         {
             var material = await _materiais.ObterPorIdAsync(materialId);
             if (material is null)

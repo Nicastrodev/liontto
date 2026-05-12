@@ -33,7 +33,7 @@ namespace LionttoMoveis.Controllers
 
             if (!ModelState.IsValid)
             {
-                TempData["Erro"] = ObterPrimeiroErroModelState() ?? "Preencha os campos obrigatorios.";
+                TempData["Erro"] = ObterPrimeiroErroModelState() ?? "Preencha os campos destacados e tente novamente.";
                 return View(cliente);
             }
 
@@ -60,7 +60,7 @@ namespace LionttoMoveis.Controllers
 
             if (!ModelState.IsValid)
             {
-                TempData["Erro"] = ObterPrimeiroErroModelState() ?? "Preencha os campos obrigatorios.";
+                TempData["Erro"] = ObterPrimeiroErroModelState() ?? "Preencha os campos destacados e tente novamente.";
                 cliente.Id = id;
                 cliente.CriadoEm = existente.CriadoEm;
                 return View(cliente);
@@ -95,9 +95,17 @@ namespace LionttoMoveis.Controllers
         private static void NormalizarCliente(Cliente cliente)
         {
             cliente.Nome = (cliente.Nome ?? string.Empty).Trim();
-            cliente.Telefone = (cliente.Telefone ?? string.Empty).Trim();
-            cliente.Email = (cliente.Email ?? string.Empty).Trim();
-            cliente.Endereco = (cliente.Endereco ?? string.Empty).Trim();
+            cliente.Telefone = NormalizarOpcional(cliente.Telefone);
+            cliente.Email = NormalizarOpcional(cliente.Email);
+            cliente.Endereco = NormalizarOpcional(cliente.Endereco);
+        }
+
+        private static string? NormalizarOpcional(string? texto)
+        {
+            if (string.IsNullOrWhiteSpace(texto))
+                return null;
+
+            return texto.Trim();
         }
 
         private string? ObterPrimeiroErroModelState()

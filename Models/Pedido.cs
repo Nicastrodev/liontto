@@ -1,9 +1,5 @@
 // =============================================================
 // Models/Pedido.cs
-// CONCEITO POO: COMPOSIÇÃO + ENCAPSULAMENTO + POLIMORFISMO
-// =============================================================
-// No MongoDB, ItemDoPedido era embedded. No MySQL relacional,
-// vira tabela separada itens_do_pedido com FK.
 // =============================================================
 
 using System.ComponentModel.DataAnnotations;
@@ -20,44 +16,37 @@ namespace LionttoMoveis.Models
         Entregue
     }
 
-    /// <summary>
-    /// Tabela de itens do pedido: produto + quantidade + personalização.
-    /// </summary>
     [Table("itens_do_pedido")]
     public class ItemDoPedido
     {
         public int Id { get; set; }
 
-        // FK → Pedido
         [Column("pedido_id")]
         public int PedidoId { get; set; }
         public Pedido? Pedido { get; set; }
 
-        // FK → Produto
         [Column("produto_id")]
         public int ProdutoId { get; set; }
         public Produto? Produto { get; set; }
 
-        // Nome desnormalizado para histórico mesmo se produto for excluído
-        [Required]
-        [RequiredTrimmed(ErrorMessage = "Nome do produto e obrigatorio.")]
+        [Required(ErrorMessage = "Produto obrigatorio.")]
+        [RequiredTrimmed(ErrorMessage = "Produto obrigatorio.")]
         [Column("produto_nome")]
-        [MaxLength(150)]
+        [MaxLength(150, ErrorMessage = "O nome do produto pode ter no maximo 150 caracteres.")]
         public string ProdutoNome { get; set; } = string.Empty;
 
         [Column("quantidade")]
-        [Range(1, int.MaxValue, ErrorMessage = "Quantidade do item deve ser maior que zero.")]
+        [Range(1, int.MaxValue, ErrorMessage = "Digite uma quantidade valida.")]
         public int Quantidade { get; set; } = 1;
 
         [Column("preco_unitario", TypeName = "decimal(10,2)")]
-        [Range(typeof(decimal), "0", "9999999999", ErrorMessage = "Preco unitario invalido.")]
+        [Range(typeof(decimal), "0", "9999999999", ErrorMessage = "Digite um preco unitario valido.")]
         public decimal PrecoUnitario { get; set; }
 
         [Column("personalizacoes")]
-        [MaxLength(500)]
-        public string Personalizacoes { get; set; } = string.Empty;
+        [MaxLength(500, ErrorMessage = "A personalizacao pode ter no maximo 500 caracteres.")]
+        public string? Personalizacoes { get; set; }
 
-        // ENCAPSULAMENTO: subtotal calculado, não salvo no banco
         [NotMapped]
         public decimal Subtotal => PrecoUnitario * Quantidade;
     }
@@ -65,25 +54,23 @@ namespace LionttoMoveis.Models
     [Table("pedidos")]
     public class Pedido : EntidadeBase
     {
-        // FK → Cliente
         [Column("cliente_id")]
-        [Range(1, int.MaxValue, ErrorMessage = "Cliente invalido.")]
+        [Range(1, int.MaxValue, ErrorMessage = "Selecione um cliente.")]
         public int ClienteId { get; set; }
         public Cliente? Cliente { get; set; }
 
-        // Nome desnormalizado
-        [Required]
-        [RequiredTrimmed(ErrorMessage = "Nome do cliente e obrigatorio.")]
+        [Required(ErrorMessage = "Nome do cliente obrigatorio.")]
+        [RequiredTrimmed(ErrorMessage = "Nome do cliente obrigatorio.")]
         [Column("cliente_nome")]
-        [MaxLength(150)]
+        [MaxLength(150, ErrorMessage = "O nome do cliente pode ter no maximo 150 caracteres.")]
         public string ClienteNome { get; set; } = string.Empty;
 
         [Column("status")]
         public StatusPedido Status { get; set; } = StatusPedido.Aguardando;
 
         [Column("observacoes")]
-        [MaxLength(500)]
-        public string Observacoes  { get; set; } = string.Empty;
+        [MaxLength(500, ErrorMessage = "As observacoes podem ter no maximo 500 caracteres.")]
+        public string? Observacoes { get; set; }
 
         [Column("valor_total", TypeName = "decimal(10,2)")]
         [Range(typeof(decimal), "0", "9999999999", ErrorMessage = "Valor total invalido.")]
@@ -98,12 +85,7 @@ namespace LionttoMoveis.Models
         [Column("data_entrega_real")]
         public DateTime? DataEntregaReal { get; set; }
 
-        // Navegação
         public List<ItemDoPedido> Itens { get; set; } = new();
-
-        // -------------------------------------------------------
-        // ENCAPSULAMENTO: lógica de negócio no modelo
-        // -------------------------------------------------------
 
         public void RecalcularTotal()
         {
@@ -116,8 +98,8 @@ namespace LionttoMoveis.Models
             {
                 StatusPedido.Aguardando => StatusPedido.EmProducao,
                 StatusPedido.EmProducao => StatusPedido.Pronto,
-                StatusPedido.Pronto     => StatusPedido.Entregue,
-                _                       => Status
+                StatusPedido.Pronto => StatusPedido.Entregue,
+                _ => Status
             };
 
             if (Status == StatusPedido.Entregue)
@@ -127,11 +109,11 @@ namespace LionttoMoveis.Models
         [NotMapped]
         public string StatusLabel => Status switch
         {
-            StatusPedido.Aguardando => "⏳ Aguardando",
-            StatusPedido.EmProducao => "🔨 Em Produção",
-            StatusPedido.Pronto     => "✅ Pronto",
-            StatusPedido.Entregue   => "📦 Entregue",
-            _                       => Status.ToString()
+            StatusPedido.Aguardando => "Aguardando",
+            StatusPedido.EmProducao => "Em producao",
+            StatusPedido.Pronto => "Pronto",
+            StatusPedido.Entregue => "Entregue",
+            _ => Status.ToString()
         };
 
         [NotMapped]
@@ -139,12 +121,12 @@ namespace LionttoMoveis.Models
         {
             StatusPedido.Aguardando => "badge-secondary",
             StatusPedido.EmProducao => "badge-info",
-            StatusPedido.Pronto     => "badge-warning",
-            StatusPedido.Entregue   => "badge-ok",
-            _                       => "badge-secondary"
+            StatusPedido.Pronto => "badge-warning",
+            StatusPedido.Entregue => "badge-ok",
+            _ => "badge-secondary"
         };
 
         public override string Descricao() =>
-            $"Pedido #{Id} — {ClienteNome} — {StatusLabel} — R$ {ValorTotal:F2}";
+            $"Pedido #{Id} - {ClienteNome} - {StatusLabel} - R$ {ValorTotal:F2}";
     }
 }

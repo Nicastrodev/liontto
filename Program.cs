@@ -12,9 +12,10 @@ builder.WebHost.UseUrls($"http://0.0.0.0:{port}");
 
 builder.Services.AddControllersWithViews(options =>
 {
-    options.ModelBindingMessageProvider.SetValueMustNotBeNullAccessor(_ => "Preencha este campo.");
-    options.ModelBindingMessageProvider.SetValueIsInvalidAccessor(_ => "Valor invalido para o campo informado.");
-    options.ModelBindingMessageProvider.SetAttemptedValueIsInvalidAccessor((_, field) => $"Preencha o campo {field}.");
+    options.ModelBindingMessageProvider.SetValueMustNotBeNullAccessor(_ => "Este campo e obrigatorio.");
+    options.ModelBindingMessageProvider.SetValueIsInvalidAccessor(_ => "Informe um valor valido.");
+    options.ModelBindingMessageProvider.SetAttemptedValueIsInvalidAccessor((_, field) => $"O valor informado para {field} e invalido.");
+    options.ModelBindingMessageProvider.SetValueMustBeANumberAccessor(field => $"Digite um numero valido para {field}.");
 });
 
 builder.Services.AddDistributedMemoryCache();

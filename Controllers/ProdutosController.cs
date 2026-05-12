@@ -50,7 +50,7 @@ namespace LionttoMoveis.Controllers
                     "Novo",
                     produto,
                     false,
-                    ObterPrimeiroErroModelState() ?? "Preencha os campos obrigatorios.");
+                    ObterPrimeiroErroModelState() ?? "Preencha os campos destacados e tente novamente.");
 
             var (materiaisDoProduto, erroMateriais) = await MontarMateriaisAsync(matIds, matQtds);
             if (erroMateriais is not null)
@@ -106,7 +106,7 @@ namespace LionttoMoveis.Controllers
                     "Editar",
                     produto,
                     true,
-                    ObterPrimeiroErroModelState() ?? "Preencha os campos obrigatorios.");
+                    ObterPrimeiroErroModelState() ?? "Preencha os campos destacados e tente novamente.");
             }
 
             var (materiaisDoProduto, erroMateriais) = await MontarMateriaisAsync(matIds, matQtds);
@@ -196,7 +196,15 @@ namespace LionttoMoveis.Controllers
         private static void NormalizarProduto(Produto produto)
         {
             produto.Nome = (produto.Nome ?? string.Empty).Trim();
-            produto.Descricao_ = (produto.Descricao_ ?? string.Empty).Trim();
+            produto.Descricao_ = NormalizarOpcional(produto.Descricao_);
+        }
+
+        private static string? NormalizarOpcional(string? texto)
+        {
+            if (string.IsNullOrWhiteSpace(texto))
+                return null;
+
+            return texto.Trim();
         }
 
         private string? ObterPrimeiroErroModelState()

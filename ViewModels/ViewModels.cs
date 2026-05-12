@@ -14,13 +14,16 @@ namespace LionttoMoveis.ViewModels
     {
         [Range(1, int.MaxValue, ErrorMessage = "Selecione um cliente.")]
         public int ClienteId { get; set; }
+
+        [MaxLength(500, ErrorMessage = "As observacoes podem ter no maximo 500 caracteres.")]
         public string? Observacoes { get; set; }
+
         public string? DataEntregaPrevista { get; set; }
 
         // Listas paralelas dos itens do formulário
         public List<int>    ProdIds  { get; set; } = new();
         public List<int>    ProdQtds { get; set; } = new();
-        public List<string> ProdPers { get; set; } = new();
+        public List<string?> ProdPers { get; set; } = new();
 
         // Dados para popular selects
         public List<Cliente> Clientes { get; set; } = new();
@@ -37,11 +40,16 @@ namespace LionttoMoveis.ViewModels
     public class MovimentacaoViewModel
     {
         public Material Material { get; set; } = null!;
-        [RequiredTrimmed(ErrorMessage = "Tipo de movimentacao e obrigatorio.")]
+
+        [RequiredTrimmed(ErrorMessage = "Selecione o tipo de movimentacao.")]
         public string Tipo { get; set; } = "Entrada";
-        [Range(0.01, double.MaxValue, ErrorMessage = "Quantidade deve ser maior que zero.")]
+
+        [Range(0.01, double.MaxValue, ErrorMessage = "Digite uma quantidade valida.")]
         public double Quantidade { get; set; }
-        public string Motivo { get; set; } = string.Empty;
+
+        [MaxLength(300, ErrorMessage = "O motivo pode ter no maximo 300 caracteres.")]
+        public string? Motivo { get; set; }
+
         public List<Movimentacao> Historico { get; set; } = new();
     }
 

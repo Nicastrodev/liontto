@@ -15,25 +15,25 @@ namespace LionttoMoveis.Models
     {
         // FK → Material
         [Column("material_id")]
-        [Range(1, int.MaxValue, ErrorMessage = "Material invalido.")]
+        [Range(1, int.MaxValue, ErrorMessage = "Selecione um material valido.")]
         public int MaterialId { get; set; }
         public Material? Material { get; set; }
 
-        [Required]
-        [RequiredTrimmed(ErrorMessage = "Nome do material e obrigatorio.")]
+        [Required(ErrorMessage = "Nome do material obrigatorio.")]
+        [RequiredTrimmed(ErrorMessage = "Nome do material obrigatorio.")]
         [Column("nome_material")]
-        [MaxLength(150)]
+        [MaxLength(150, ErrorMessage = "O nome do material pode ter no maximo 150 caracteres.")]
         public string NomeMaterial { get; set; } = string.Empty;
 
         [Column("tipo")]
         public TipoMovimentacao Tipo { get; set; }
 
         [Column("quantidade")]
-        [Range(0.01, double.MaxValue, ErrorMessage = "Quantidade deve ser maior que zero.")]
+        [Range(0.01, double.MaxValue, ErrorMessage = "Digite uma quantidade valida.")]
         public double Quantidade { get; set; }
 
         [Column("motivo")]
-        [MaxLength(300)]
+        [MaxLength(300, ErrorMessage = "O motivo pode ter no maximo 300 caracteres.")]
         public string? Motivo { get; set; }
         
         [Column("data_movimentacao")]

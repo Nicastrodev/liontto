@@ -11,10 +11,10 @@ namespace LionttoMoveis.Validation
         protected override ValidationResult? IsValid(object? value, ValidationContext validationContext)
         {
             if (value is null)
-                return new ValidationResult(ErrorMessage ?? $"{validationContext.DisplayName} is required.");
+                return new ValidationResult(ErrorMessage ?? $"O campo {validationContext.DisplayName} e obrigatorio.");
 
             if (value is string text && string.IsNullOrWhiteSpace(text))
-                return new ValidationResult(ErrorMessage ?? $"{validationContext.DisplayName} is required.");
+                return new ValidationResult(ErrorMessage ?? $"O campo {validationContext.DisplayName} e obrigatorio.");
 
             return ValidationResult.Success;
         }

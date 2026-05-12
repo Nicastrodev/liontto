@@ -12,7 +12,7 @@ namespace LionttoMoveis.Helpers
             ["Email"] = "e-mail",
             ["Endereco"] = "endereco",
             ["ClienteId"] = "cliente",
-            ["DataEntregaPrevista"] = "data de entrega prevista",
+            ["DataEntregaPrevista"] = "data de entrega",
             ["ProdIds"] = "produto",
             ["ProdQtds"] = "quantidade do produto",
             ["ProdPers"] = "personalizacao",
@@ -39,17 +39,17 @@ namespace LionttoMoveis.Helpers
                     if (!string.IsNullOrWhiteSpace(mensagem))
                     {
                         if (EhMensagemTecnica(mensagem))
-                            return $"Preencha o campo {ResolverNomeCampo(entrada.Key)}.";
+                            return $"Revise o campo {ResolverNomeCampo(entrada.Key)} e tente novamente.";
 
                         return mensagem;
                     }
 
                     if (erro.Exception is not null)
-                        return $"Preencha o campo {ResolverNomeCampo(entrada.Key)}.";
+                        return $"Revise o campo {ResolverNomeCampo(entrada.Key)} e tente novamente.";
                 }
             }
 
-            return null;
+            return "Preencha os campos destacados e tente novamente.";
         }
 
         private static bool EhMensagemTecnica(string mensagem)

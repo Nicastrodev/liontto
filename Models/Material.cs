@@ -16,28 +16,28 @@ namespace LionttoMoveis.Models
     [Table("materiais")]
     public class Material : EntidadeBase
     {
-        [Required]
-        [RequiredTrimmed(ErrorMessage = "Nome e obrigatorio.")]
+        [Required(ErrorMessage = "Informe o nome do material.")]
+        [RequiredTrimmed(ErrorMessage = "Informe o nome do material.")]
         [Column("nome")]
-        [MaxLength(150)]
+        [MaxLength(150, ErrorMessage = "O nome do material pode ter no maximo 150 caracteres.")]
         public string Nome { get; set; } = string.Empty;
 
-        [Required]
-        [RequiredTrimmed(ErrorMessage = "Unidade e obrigatoria.")]
+        [Required(ErrorMessage = "Selecione a unidade de medida.")]
+        [RequiredTrimmed(ErrorMessage = "Selecione a unidade de medida.")]
         [Column("unidade")]
-        [MaxLength(30)]
+        [MaxLength(30, ErrorMessage = "A unidade pode ter no maximo 30 caracteres.")]
         public string Unidade { get; set; } = string.Empty;
 
         [Column("quantidade")]
-        [Range(0, double.MaxValue, ErrorMessage = "Quantidade nao pode ser negativa.")]
+        [Range(0, double.MaxValue, ErrorMessage = "Digite uma quantidade valida.")]
         public double Quantidade { get; set; } = 0;
 
         [Column("quantidade_minima")]
-        [Range(0, double.MaxValue, ErrorMessage = "Quantidade minima nao pode ser negativa.")]
+        [Range(0, double.MaxValue, ErrorMessage = "Digite uma quantidade minima valida.")]
         public double QuantidadeMinima { get; set; } = 5;
 
         [Column("preco_unitario", TypeName = "decimal(10,2)")]
-        [Range(typeof(decimal), "0", "9999999999", ErrorMessage = "Preco unitario invalido.")]
+        [Range(typeof(decimal), "0", "9999999999", ErrorMessage = "Digite um preco unitario valido.")]
         public decimal PrecoUnitario { get; set; } = 0;
 
         // Navegação: histórico de movimentações deste material

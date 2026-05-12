@@ -45,17 +45,17 @@ namespace LionttoMoveis.Controllers
             NormalizarNovoPedido(vm);
 
             if (!ModelState.IsValid)
-                return await RetornarNovoComErroAsync(vm, ObterPrimeiroErroModelState() ?? "Dados invalidos para criar pedido.");
+                return await RetornarNovoComErroAsync(vm, ObterPrimeiroErroModelState() ?? "Preencha os campos destacados e tente novamente.");
 
             var cliente = await _clientes.ObterPorIdAsync(vm.ClienteId);
             if (cliente is null || string.IsNullOrWhiteSpace(cliente.Nome))
-                return await RetornarNovoComErroAsync(vm, "Cliente selecionado e invalido.");
+                return await RetornarNovoComErroAsync(vm, "Selecione um cliente valido.");
 
             DateTime? dataEntregaPrevista = null;
             if (!string.IsNullOrWhiteSpace(vm.DataEntregaPrevista))
             {
                 if (!DateTime.TryParse(vm.DataEntregaPrevista, out var dataParseada))
-                    return await RetornarNovoComErroAsync(vm, "Data de entrega prevista invalida.");
+                    return await RetornarNovoComErroAsync(vm, "Informe uma data de entrega prevista valida.");
 
                 dataEntregaPrevista = dataParseada;
             }
@@ -68,7 +68,7 @@ namespace LionttoMoveis.Controllers
             {
                 ClienteId = vm.ClienteId,
                 ClienteNome = cliente.Nome.Trim(),
-                Observacoes = vm.Observacoes ?? string.Empty,
+                Observacoes = vm.Observacoes,
                 DataEntregaPrevista = dataEntregaPrevista,
                 Itens = itens
             };
@@ -132,13 +132,14 @@ namespace LionttoMoveis.Controllers
 
                 var quantidade = i < vm.ProdQtds.Count ? vm.ProdQtds[i] : 0;
                 if (quantidade <= 0)
-                    return (itens, "Informe quantidade valida para todos os produtos selecionados.");
+                    return (itens, "Digite uma quantidade valida para todos os produtos selecionados.");
 
                 var prod = await _produtos.ObterPorIdAsync(produtoId);
                 if (prod is null || string.IsNullOrWhiteSpace(prod.Nome))
                     return (itens, "Um dos produtos selecionados nao existe mais.");
 
                 var personalizacao = i < vm.ProdPers.Count ? (vm.ProdPers[i] ?? string.Empty).Trim() : string.Empty;
+                var personalizacaoNormalizada = NormalizarOpcional(personalizacao);
 
                 itens.Add(new ItemDoPedido
                 {
@@ -146,7 +147,7 @@ namespace LionttoMoveis.Controllers
                     ProdutoNome = prod.Nome.Trim(),
                     Quantidade = quantidade,
                     PrecoUnitario = prod.PrecoBase,
-                    Personalizacoes = personalizacao
+                    Personalizacoes = personalizacaoNormalizada
                 });
             }
 
@@ -158,13 +159,13 @@ namespace LionttoMoveis.Controllers
 
         private static void NormalizarNovoPedido(NovoPedidoViewModel vm)
         {
-            vm.Observacoes = (vm.Observacoes ?? string.Empty).Trim();
+            vm.Observacoes = NormalizarOpcional(vm.Observacoes);
             vm.DataEntregaPrevista = string.IsNullOrWhiteSpace(vm.DataEntregaPrevista)
                 ? null
                 : vm.DataEntregaPrevista.Trim();
 
             for (int i = 0; i < vm.ProdPers.Count; i++)
-                vm.ProdPers[i] = (vm.ProdPers[i] ?? string.Empty).Trim();
+                vm.ProdPers[i] = NormalizarOpcional(vm.ProdPers[i]);
         }
 
         private async Task<NovoPedidoViewModel> MontarNovoPedidoVmAsync(NovoPedidoViewModel vm)
@@ -183,5 +184,13 @@ namespace LionttoMoveis.Controllers
 
         private string? ObterPrimeiroErroModelState()
             => ModelStateErrorHelper.ObterPrimeiroErroAmigavel(ModelState);
+
+        private static string? NormalizarOpcional(string? texto)
+        {
+            if (string.IsNullOrWhiteSpace(texto))
+                return null;
+
+            return texto.Trim();
+        }
     }
 }

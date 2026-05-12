@@ -62,6 +62,9 @@ namespace LionttoMoveis.Data
             {
                 e.HasKey(c => c.Id);
                 e.Property(c => c.Nome).IsRequired();
+                e.Property(c => c.Telefone).IsRequired(false);
+                e.Property(c => c.Email).IsRequired(false);
+                e.Property(c => c.Endereco).IsRequired(false);
                 e.ToTable(t =>
                 {
                     t.HasCheckConstraint("CK_clientes_nome_not_blank", "CHAR_LENGTH(TRIM(nome)) > 0");
@@ -78,6 +81,7 @@ namespace LionttoMoveis.Data
             {
                 e.HasKey(p => p.Id);
                 e.Property(p => p.Nome).IsRequired();
+                e.Property(p => p.Descricao_).IsRequired(false);
                 e.ToTable(t =>
                 {
                     t.HasCheckConstraint("CK_produtos_nome_not_blank", "CHAR_LENGTH(TRIM(nome)) > 0");
@@ -113,6 +117,7 @@ namespace LionttoMoveis.Data
             {
                 e.HasKey(p => p.Id);
                 e.Property(p => p.ClienteNome).IsRequired();
+                e.Property(p => p.Observacoes).IsRequired(false);
                 e.ToTable(t =>
                 {
                     t.HasCheckConstraint("CK_pedidos_cliente_nome_not_blank", "CHAR_LENGTH(TRIM(cliente_nome)) > 0");
@@ -131,6 +136,7 @@ namespace LionttoMoveis.Data
             {
                 e.HasKey(i => i.Id);
                 e.Property(i => i.ProdutoNome).IsRequired();
+                e.Property(i => i.Personalizacoes).IsRequired(false);
                 e.ToTable(t =>
                 {
                     t.HasCheckConstraint("CK_itens_do_pedido_produto_nome_not_blank", "CHAR_LENGTH(TRIM(produto_nome)) > 0");
@@ -195,7 +201,17 @@ namespace LionttoMoveis.Data
                     continue;
 
                 if (propriedade.CurrentValue is string texto)
-                    propriedade.CurrentValue = texto.Trim();
+                {
+                    var textoNormalizado = texto.Trim();
+
+                    if (string.IsNullOrWhiteSpace(textoNormalizado) && propriedade.Metadata.IsNullable)
+                    {
+                        propriedade.CurrentValue = null;
+                        continue;
+                    }
+
+                    propriedade.CurrentValue = textoNormalizado;
+                }
             }
         }
     }

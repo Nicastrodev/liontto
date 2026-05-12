@@ -3,44 +3,43 @@
 @{ ViewData["Title"] = "Editar Material"; }
 
 <div class="card" style="max-width:600px;">
-    <form method="post" action="/Materiais/Editar/@Model.Id">
+    <form method="post" asp-action="Editar" asp-controller="Materiais" asp-route-id="@Model.Id" novalidate>
         @Html.AntiForgeryToken()
+        <div asp-validation-summary="ModelOnly"></div>
+
         <div class="form-grid">
             <div class="form-group" style="grid-column:1/-1;">
-                <label>Nome do Material *</label>
-                <input type="text" name="Nome" value="@Model.Nome" required/>
+                <label asp-for="Nome">Nome do Material *</label>
+                <input asp-for="Nome"/>
+                <span asp-validation-for="Nome"></span>
             </div>
             <div class="form-group">
-                <label>Unidade de Medida *</label>
-                <select name="Unidade" required>
-                    @* CORREÇÃO: if separado — Razor Tag Helper não aceita ternário em atributos *@
+                <label asp-for="Unidade">Unidade de Medida *</label>
+                <select asp-for="Unidade">
                     @foreach (var u in new[]{"m²","metro","unidade","par","kg","litro","caixa","rolo"})
                     {
-                        if (Model.Unidade == u)
-                        {
-                            <option value="@u" selected>@u</option>
-                        }
-                        else
-                        {
-                            <option value="@u">@u</option>
-                        }
+                        <option value="@u">@u</option>
                     }
                 </select>
+                <span asp-validation-for="Unidade"></span>
             </div>
             <div class="form-group">
-                <label>Quantidade Mínima</label>
-                <input type="number" name="QuantidadeMinima" value="@Model.QuantidadeMinima" min="0" step="0.01"/>
+                <label asp-for="QuantidadeMinima">Quantidade Minima</label>
+                <input asp-for="QuantidadeMinima" min="0" step="0.01"/>
+                <span asp-validation-for="QuantidadeMinima"></span>
             </div>
             <div class="form-group">
-                <label>Preço Unitário (R$)</label>
-                <input type="number" name="PrecoUnitario" value="@Model.PrecoUnitario" min="0" step="0.01"/>
+                <label asp-for="PrecoUnitario">Preco Unitario (R$)</label>
+                <input asp-for="PrecoUnitario" min="0" step="0.01"/>
+                <span asp-validation-for="PrecoUnitario"></span>
             </div>
         </div>
+
         <input type="hidden" name="Quantidade" value="@Model.Quantidade"/>
-        <input type="hidden" name="CriadoEm"   value="@Model.CriadoEm.ToString("o")"/>
+        <input type="hidden" name="CriadoEm" value="@Model.CriadoEm.ToString("o")"/>
         <div class="divider"></div>
         <div class="flex gap-2">
-            <button type="submit" class="btn btn-primary">💾 Salvar Alterações</button>
+            <button type="submit" class="btn btn-primary">Salvar Alteracoes</button>
             <a href="/Materiais" class="btn btn-outline">Cancelar</a>
         </div>
     </form>
