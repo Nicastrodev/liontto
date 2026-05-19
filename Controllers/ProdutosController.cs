@@ -3,10 +3,10 @@
 // =============================================================
 
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
 using LionttoMoveis.Helpers;
 using LionttoMoveis.Models;
 using LionttoMoveis.Repository;
-using LionttoMoveis.Data;
 
 namespace LionttoMoveis.Controllers
 {
@@ -22,13 +22,11 @@ namespace LionttoMoveis.Controllers
     {
         private readonly ProdutoRepository _produtos;
         private readonly MaterialRepository _materiais;
-        private readonly AppDbContext _ctx;
 
-        public ProdutosController(ProdutoRepository prod, MaterialRepository mat, AppDbContext ctx)
+        public ProdutosController(ProdutoRepository prod, MaterialRepository mat)
         {
             _produtos = prod;
             _materiais = mat;
-            _ctx = ctx;
         }
 
         public async Task<IActionResult> Index()
@@ -117,18 +115,18 @@ namespace LionttoMoveis.Controllers
                 return await RetornarFormularioComErroAsync("Editar", produto, true, erroMateriais);
             }
 
-            existente.Nome = produto.Nome;
-            existente.Descricao_ = produto.Descricao_;
-            existente.PrecoBase = produto.PrecoBase;
-            existente.TempoProducaoDias = produto.TempoProducaoDias;
+            try
+            {
+                var atualizado = await _produtos.AtualizarComMateriaisAsync(id, produto, materiaisDoProduto);
+                if (!atualizado)
+                    return NotFound();
+            }
+            catch (DbUpdateConcurrencyException)
+            {
+                TempData["Erro"] = "Este produto foi alterado por outro usuario. Reabra a tela e tente novamente.";
+                return RedirectToAction(nameof(Editar), new { id });
+            }
 
-            _ctx.MateriaisDoProduto.RemoveRange(existente.Materiais);
-
-            existente.Materiais = materiaisDoProduto;
-            foreach (var m in existente.Materiais)
-                m.ProdutoId = id;
-
-            await _ctx.SaveChangesAsync();
             TempData["Sucesso"] = "Produto atualizado!";
             return RedirectToAction(nameof(Index));
         }

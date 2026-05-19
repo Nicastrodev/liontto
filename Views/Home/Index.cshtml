@@ -1,73 +1,194 @@
-@model DashboardViewModel
-@{ ViewData["Title"] = "Dashboard"; }
+﻿@model DashboardViewModel
+@using System.Globalization
+@using System.Text.Json
+@{
+    ViewData["Title"] = "Dashboard";
 
-@section TopbarActions {
-    <a href="/Pedidos/Novo" class="btn btn-accent">➕ Novo Pedido</a>
+    var pedidosAguardando = Model.PedidosPorStatus.GetValueOrDefault("Aguardando", 0);
+    var pedidosEmProducao = Model.PedidosPorStatus.GetValueOrDefault("EmProducao", 0);
+    var pedidosPronto = Model.PedidosPorStatus.GetValueOrDefault("Pronto", 0);
+    var pedidosEntregue = Model.PedidosPorStatus.GetValueOrDefault("Entregue", 0);
+
+    var estoqueCritico = Model.EstoqueGrafico.Count(m => m.Quantidade <= m.QuantidadeMinima);
+    var estoqueAtencao = Model.EstoqueGrafico.Count(m => m.Quantidade > m.QuantidadeMinima && m.Quantidade <= (m.QuantidadeMinima * 1.25));
+    var estoqueAdequado = Model.EstoqueGrafico.Count - estoqueCritico - estoqueAtencao;
 }
 
-@* Alerta de estoque baixo *@
+@section TopbarActions {
+    <a href="/Pedidos/Novo" class="btn btn-accent">Novo Pedido</a>
+}
+
+<style>
+    .dashboard-note {
+        border: 1px solid rgba(17, 24, 39, .08);
+        background: linear-gradient(135deg, #ffffff 0%, #f7fbf8 100%);
+        border-radius: 14px;
+        padding: 16px;
+        margin-bottom: 20px;
+    }
+
+    .dashboard-note p {
+        margin: 0;
+        color: #334155;
+        line-height: 1.45;
+        font-size: 13px;
+    }
+
+    .dashboard-kpis {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(170px, 1fr));
+        gap: 12px;
+        margin-bottom: 22px;
+    }
+
+    .kpi {
+        background: #fff;
+        border: 1px solid var(--border);
+        border-radius: 12px;
+        padding: 12px 14px;
+    }
+
+    .kpi-label {
+        font-size: 12px;
+        color: #64748b;
+        margin-bottom: 5px;
+    }
+
+    .kpi-value {
+        font-size: 22px;
+        font-weight: 700;
+        color: #0f172a;
+    }
+
+    .charts-grid .card {
+        border-radius: 14px;
+        box-shadow: 0 8px 30px rgba(15, 23, 42, .06);
+    }
+
+    .chart-legend {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(145px, 1fr));
+        gap: 8px;
+        margin-top: 14px;
+    }
+
+    .legend-chip {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        border-radius: 999px;
+        border: 1px solid #e2e8f0;
+        padding: 8px 10px;
+        background: #fff;
+        font-size: 12px;
+        color: #334155;
+    }
+
+    .legend-dot {
+        width: 10px;
+        height: 10px;
+        border-radius: 50%;
+        flex: 0 0 10px;
+    }
+
+    .legend-dot.ok { background: #2e8b57; }
+    .legend-dot.warn { background: #f59e0b; }
+    .legend-dot.crit { background: #dc2626; }
+
+    .legend-line {
+        width: 14px;
+        border-top: 2px dashed #f97316;
+        flex: 0 0 14px;
+    }
+
+    @@media (max-width: 768px) {
+        .dashboard-kpis {
+            grid-template-columns: 1fr 1fr;
+        }
+    }
+
+    @@media (max-width: 520px) {
+        .dashboard-kpis {
+            grid-template-columns: 1fr;
+        }
+    }
+</style>
+
 @if (Model.AlertasEstoque.Any())
 {
     <div class="alert alert-danger mb-4">
-        ⚠️ <strong>Atenção!</strong> @Model.AlertasEstoque.Count material(is) com estoque abaixo do mínimo.
-        <a href="/Materiais" style="color:inherit; margin-left:8px; font-weight:700;">Ver estoque →</a>
+        <strong>Atencao:</strong> @Model.AlertasEstoque.Count material(is) estao abaixo do minimo.
+        <a href="/Materiais" style="color:inherit; margin-left:8px; font-weight:700;">Ver estoque</a>
     </div>
 }
 
-@* Cards de estatísticas *@
 <div class="stats-grid">
     <div class="stat-card">
-        <div class="stat-icon brown">👥</div>
-        <div><div class="stat-value">@Model.TotalClientes</div><div class="stat-label">Clientes</div></div>
+        <div class="stat-icon brown">CL</div>
+        <div><div class="stat-value">@Model.TotalClientes</div><div class="stat-label">Ativos</div></div>
     </div>
     <div class="stat-card">
-        <div class="stat-icon gold">🪑</div>
-        <div><div class="stat-value">@Model.TotalProdutos</div><div class="stat-label">Produtos</div></div>
+        <div class="stat-icon gold">PR</div>
+        <div><div class="stat-value">@Model.TotalProdutos</div><div class="stat-label">Catalogo</div></div>
     </div>
     <div class="stat-card">
-        <div class="stat-icon green">📦</div>
-        <div><div class="stat-value">@Model.TotalMateriais</div><div class="stat-label">Materiais</div></div>
+        <div class="stat-icon green">MT</div>
+        <div><div class="stat-value">@Model.TotalMateriais</div><div class="stat-label">Cadastrados</div></div>
     </div>
     <div class="stat-card">
-        <div class="stat-icon blue">🔨</div>
+        <div class="stat-icon blue">PD</div>
         <div>
-            <div class="stat-value">@(Model.PedidosPorStatus.GetValueOrDefault("EmProducao", 0))</div>
-            <div class="stat-label">Em Produção</div>
-        </div>
-    </div>
-    <div class="stat-card">
-        <div class="stat-icon green">✅</div>
-        <div>
-            <div class="stat-value">@(Model.PedidosPorStatus.GetValueOrDefault("Pronto", 0))</div>
-            <div class="stat-label">Prontos p/ Entrega</div>
-        </div>
-    </div>
-    <div class="stat-card">
-        <div class="stat-icon brown">📋</div>
-        <div>
-            <div class="stat-value">@(Model.PedidosPorStatus.GetValueOrDefault("Aguardando", 0))</div>
-            <div class="stat-label">Aguardando</div>
+            <div class="stat-value">@(pedidosAguardando + pedidosEmProducao + pedidosPronto + pedidosEntregue)</div>
+            <div class="stat-label">Total</div>
         </div>
     </div>
 </div>
 
-@* Gráficos *@
+<div class="dashboard-note">
+    <p>As barras do grafico de estoque seguem esta regra: verde = adequado, laranja = atencao, vermelho = abaixo do minimo. A linha tracejada indica o estoque minimo configurado para cada material.</p>
+</div>
+
+<div class="dashboard-kpis">
+    <div class="kpi">
+        <div class="kpi-label">Estoque adequado</div>
+        <div class="kpi-value">@estoqueAdequado</div>
+    </div>
+    <div class="kpi">
+        <div class="kpi-label">Estoque em atencao</div>
+        <div class="kpi-value">@estoqueAtencao</div>
+    </div>
+    <div class="kpi">
+        <div class="kpi-label">Estoque critico</div>
+        <div class="kpi-value">@estoqueCritico</div>
+    </div>
+    <div class="kpi">
+        <div class="kpi-label">Pedidos entregues</div>
+        <div class="kpi-value">@pedidosEntregue</div>
+    </div>
+</div>
+
 <div class="charts-grid">
     <div class="card">
         <div class="card-title">Status dos Pedidos</div>
         <div class="chart-container"><canvas id="chartPedidos"></canvas></div>
     </div>
+
     <div class="card">
-        <div class="card-title">Nível de Estoque</div>
+        <div class="card-title">Nivel de Estoque</div>
         <div class="chart-container"><canvas id="chartEstoque"></canvas></div>
+        <div class="chart-legend">
+            <div class="legend-chip"><span class="legend-dot ok"></span>Estoque adequado</div>
+            <div class="legend-chip"><span class="legend-dot warn"></span>Estoque em atencao</div>
+            <div class="legend-chip"><span class="legend-dot crit"></span>Abaixo do minimo</div>
+            <div class="legend-chip"><span class="legend-line"></span>Nivel minimo</div>
+        </div>
     </div>
 </div>
 
-@* Tabelas *@
 <div class="two-col">
     <div class="card">
         <div class="flex justify-between items-center mb-4">
-            <span class="card-title">Últimos Pedidos</span>
+            <span class="card-title">Ultimos Pedidos</span>
             <a href="/Pedidos" class="btn btn-outline btn-sm">Ver todos</a>
         </div>
         @if (Model.UltimosPedidos.Any())
@@ -82,26 +203,29 @@
                                 <td><a href="/Pedidos/Ver/@p.Id" style="color:var(--accent);font-weight:700;">#@p.Id</a></td>
                                 <td>@p.ClienteNome</td>
                                 <td><span class="badge @p.StatusCssClass">@p.StatusLabel</span></td>
-                                <td class="fw-600">@p.ValorTotal.ToString("C", new System.Globalization.CultureInfo("pt-BR"))</td>
+                                <td class="fw-600">@p.ValorTotal.ToString("C", new CultureInfo("pt-BR"))</td>
                             </tr>
                         }
                     </tbody>
                 </table>
             </div>
         }
-        else { <div class="empty-state" style="padding:30px;"><div class="icon">📋</div><p>Nenhum pedido ainda.</p></div> }
+        else
+        {
+            <div class="empty-state" style="padding:30px;"><div class="icon">Sem pedidos</div><p>Nenhum pedido encontrado.</p></div>
+        }
     </div>
 
     <div class="card">
         <div class="flex justify-between items-center mb-4">
-            <span class="card-title">⚠️ Estoque Crítico</span>
+            <span class="card-title">Estoque Critico</span>
             <a href="/Materiais" class="btn btn-outline btn-sm">Gerenciar</a>
         </div>
         @if (Model.AlertasEstoque.Any())
         {
             <div class="table-wrapper">
                 <table>
-                    <thead><tr><th>Material</th><th>Atual</th><th>Mínimo</th></tr></thead>
+                    <thead><tr><th>Material</th><th>Atual</th><th>Minimo</th></tr></thead>
                     <tbody>
                         @foreach (var m in Model.AlertasEstoque)
                         {
@@ -115,51 +239,161 @@
                 </table>
             </div>
         }
-        else { <div class="empty-state" style="padding:30px;"><div class="icon">✅</div><p>Estoque em dia!</p></div> }
+        else
+        {
+            <div class="empty-state" style="padding:30px;"><div class="icon">Tudo em dia</div><p>Nenhum item abaixo do minimo.</p></div>
+        }
     </div>
 </div>
 
 @section Scripts {
 <script>
-// Gráfico de rosca — status dos pedidos
+const pedidosData = [@pedidosAguardando, @pedidosEmProducao, @pedidosPronto, @pedidosEntregue];
+
 new Chart(document.getElementById('chartPedidos'), {
     type: 'doughnut',
     data: {
-        labels: ['Aguardando','Em Produção','Prontos','Entregues'],
+        labels: ['Aguardando', 'Em producao', 'Pronto', 'Entregue'],
         datasets: [{
-            data: [
-                @(Model.PedidosPorStatus.GetValueOrDefault("Aguardando",0)),
-                @(Model.PedidosPorStatus.GetValueOrDefault("EmProducao",0)),
-                @(Model.PedidosPorStatus.GetValueOrDefault("Pronto",0)),
-                @(Model.PedidosPorStatus.GetValueOrDefault("Entregue",0))
-            ],
-            backgroundColor: ['#8B7355','#2A6B8F','#D4A853','#3D7A4A'],
-            borderWidth: 3, borderColor: '#fff'
+            data: pedidosData,
+            backgroundColor: ['#475569', '#2563eb', '#f59e0b', '#16a34a'],
+            borderWidth: 0,
+            hoverOffset: 8
         }]
     },
-    options: { responsive:true, maintainAspectRatio:false, cutout:'65%',
-        plugins: { legend: { position:'bottom', labels:{ padding:16, font:{family:'DM Sans',size:12} } } } }
+    options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        cutout: '66%',
+        animation: { duration: 900, easing: 'easeOutQuart' },
+        plugins: {
+            legend: {
+                position: 'bottom',
+                labels: {
+                    usePointStyle: true,
+                    pointStyle: 'circle',
+                    boxWidth: 10,
+                    padding: 18,
+                    font: { family: 'DM Sans', size: 12, weight: 600 }
+                }
+            },
+            tooltip: {
+                backgroundColor: '#0f172a',
+                titleColor: '#f8fafc',
+                bodyColor: '#e2e8f0',
+                borderColor: '#1e293b',
+                borderWidth: 1,
+                displayColors: true,
+                callbacks: {
+                    label: function(ctx) {
+                        const total = ctx.dataset.data.reduce((sum, value) => sum + value, 0) || 1;
+                        const percent = ((ctx.parsed / total) * 100).toFixed(1);
+                        return `${ctx.label}: ${ctx.parsed} (${percent}%)`;
+                    }
+                }
+            }
+        }
+    }
 });
 
-// Gráfico de barras — nível de estoque
-const nomes    = [@Html.Raw(string.Join(",", Model.EstoqueGrafico.Select(m => $"\"{m.Nome.Substring(0, Math.Min(m.Nome.Length, 14))}\"")))];
-const qtds     = [@string.Join(",", Model.EstoqueGrafico.Select(m => m.Quantidade))];
-const minimos  = [@string.Join(",", Model.EstoqueGrafico.Select(m => m.QuantidadeMinima))];
-const cores    = qtds.map((q,i) => q <= minimos[i] ? 'rgba(181,48,48,.75)' : 'rgba(61,122,74,.75)');
+const estoqueLabelsFull = @Html.Raw(JsonSerializer.Serialize(Model.EstoqueGrafico.Select(m => m.Nome).ToList()));
+const estoqueAtual = [@Html.Raw(string.Join(",", Model.EstoqueGrafico.Select(m => m.Quantidade.ToString(CultureInfo.InvariantCulture))))];
+const estoqueMinimo = [@Html.Raw(string.Join(",", Model.EstoqueGrafico.Select(m => m.QuantidadeMinima.ToString(CultureInfo.InvariantCulture))))];
+
+const estoqueLabels = estoqueLabelsFull.map(nome => nome.length > 16 ? `${nome.slice(0, 16)}...` : nome);
+
+const barColors = estoqueAtual.map((valor, i) => {
+    const minimo = estoqueMinimo[i];
+
+    if (valor <= minimo) return '#dc2626';
+    if (valor <= (minimo * 1.25)) return '#f59e0b';
+    return '#2e8b57';
+});
 
 new Chart(document.getElementById('chartEstoque'), {
     type: 'bar',
     data: {
-        labels: nomes,
+        labels: estoqueLabels,
         datasets: [
-            { label:'Estoque Atual', data:qtds, backgroundColor:cores, borderRadius:6, borderSkipped:false },
-            { label:'Nível Mínimo', data:minimos, type:'line', borderColor:'#D4A853', borderWidth:2, borderDash:[5,4], pointRadius:0, fill:false }
+            {
+                label: 'Estoque atual',
+                data: estoqueAtual,
+                backgroundColor: barColors,
+                borderColor: barColors,
+                borderWidth: 1,
+                borderRadius: 10,
+                borderSkipped: false,
+                maxBarThickness: 42,
+                categoryPercentage: 0.72,
+                barPercentage: 0.95
+            },
+            {
+                label: 'Nivel minimo',
+                data: estoqueMinimo,
+                type: 'line',
+                borderColor: '#f97316',
+                borderWidth: 2,
+                borderDash: [7, 6],
+                pointRadius: 0,
+                tension: 0.25,
+                fill: false
+            }
         ]
     },
-    options: { responsive:true, maintainAspectRatio:false,
-        plugins: { legend:{ position:'bottom', labels:{ padding:16, font:{family:'DM Sans',size:12} } } },
-        scales: { y:{ beginAtZero:true, grid:{ color:'rgba(0,0,0,.05)' } }, x:{ grid:{ display:false }, ticks:{ font:{size:11} } } }
+    options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        animation: { duration: 900, easing: 'easeOutQuart' },
+        plugins: {
+            legend: { display: false },
+            tooltip: {
+                backgroundColor: '#0f172a',
+                titleColor: '#f8fafc',
+                bodyColor: '#e2e8f0',
+                borderColor: '#1e293b',
+                borderWidth: 1,
+                callbacks: {
+                    title: function(items) {
+                        return estoqueLabelsFull[items[0].dataIndex] || items[0].label;
+                    },
+                    label: function(ctx) {
+                        const unidade = '@(Model.EstoqueGrafico.FirstOrDefault()?.Unidade ?? "")';
+                        return `${ctx.dataset.label}: ${ctx.parsed.y} ${unidade}`.trim();
+                    },
+                    afterBody: function(items) {
+                        const i = items[0].dataIndex;
+                        const atual = estoqueAtual[i];
+                        const minimo = estoqueMinimo[i];
+                        if (atual <= minimo) return 'Situacao: abaixo do minimo';
+                        if (atual <= (minimo * 1.25)) return 'Situacao: atencao';
+                        return 'Situacao: adequado';
+                    }
+                }
+            }
+        },
+        scales: {
+            x: {
+                grid: { display: false },
+                ticks: {
+                    color: '#475569',
+                    font: { family: 'DM Sans', size: 11, weight: 600 },
+                    maxRotation: 0,
+                    minRotation: 0,
+                    autoSkip: false
+                }
+            },
+            y: {
+                beginAtZero: true,
+                grid: { color: 'rgba(148, 163, 184, .2)' },
+                ticks: {
+                    color: '#64748b',
+                    font: { family: 'DM Sans', size: 11 },
+                    precision: 0
+                }
+            }
+        }
     }
 });
 </script>
 }
+

@@ -1,9 +1,9 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="pt-BR">
 <head>
     <meta charset="utf-8"/>
     <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-    <title>@ViewData["Title"] — Líontto Móveis</title>
+    <title>@ViewData["Title"] - Liontto Moveis</title>
     <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@600;700&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet"/>
     <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
     <style>
@@ -75,6 +75,8 @@
 
         /* BUTTONS */
         .btn { display:inline-flex; align-items:center; gap:6px; padding:9px 18px; border-radius:8px; font-size:13px; font-weight:500; font-family:'DM Sans',sans-serif; cursor:pointer; border:none; text-decoration:none; transition:all .2s; }
+        .btn[disabled] { opacity:.75; cursor:not-allowed; }
+        .btn.is-loading::after { content:''; width:12px; height:12px; border:2px solid rgba(255,255,255,.55); border-top-color:rgba(255,255,255,1); border-radius:50%; display:inline-block; animation:spin .7s linear infinite; }
         .btn-primary { background:var(--primary); color:white; } .btn-primary:hover { background:var(--primary-light); }
         .btn-accent { background:var(--accent); color:var(--primary); } .btn-accent:hover { background:var(--accent-light); }
         .btn-success { background:var(--success); color:white; }
@@ -82,6 +84,7 @@
         .btn-outline { background:transparent; border:1.5px solid var(--border); color:var(--text); }
         .btn-outline:hover { border-color:var(--primary); background:var(--bg); }
         .btn-sm { padding:5px 12px; font-size:12px; }
+        @@keyframes spin { to { transform:rotate(360deg); } }
 
         /* FORMS */
         .form-group { margin-bottom:18px; }
@@ -123,9 +126,12 @@
 
         /* ALERTS */
         .flash-messages { margin-bottom:20px; }
-        .alert { padding:12px 18px; border-radius:8px; font-size:14px; font-weight:500; margin-bottom:10px; display:flex; align-items:center; gap:8px; }
+        .alert { padding:12px 18px; padding-right:42px; border-radius:8px; font-size:14px; font-weight:500; margin-bottom:10px; display:flex; align-items:center; gap:8px; position:relative; transition:opacity .25s ease, transform .25s ease; }
+        .alert.fade-out { opacity:0; transform:translateY(-4px); }
         .alert-success { background:rgba(61,122,74,.1); color:var(--success); border:1px solid rgba(61,122,74,.3); }
         .alert-danger  { background:rgba(181,48,48,.1); color:var(--danger);  border:1px solid rgba(181,48,48,.3); }
+        .alert-close { position:absolute; right:10px; top:8px; border:none; background:transparent; color:inherit; font-size:16px; cursor:pointer; opacity:.8; }
+        .alert-close:hover { opacity:1; }
 
         /* CHARTS */
         .charts-grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(360px,1fr)); gap:20px; margin-bottom:24px; }
@@ -194,31 +200,31 @@
 
 <aside class="sidebar">
     <div class="sidebar-logo">
-        <div class="brand">Líontto</div>
-        <div class="tagline">Móveis Planejados</div>
+        <div class="brand">Liontto</div>
+        <div class="tagline">Moveis Planejados</div>
     </div>
     <nav class="sidebar-nav">
         <div class="nav-section">Principal</div>
         <a href="/" class="nav-link @(ViewContext.RouteData.Values["controller"]?.ToString() == "Home" ? "active" : "")">
-            <span class="icon">📊</span> Dashboard
+            <span class="icon">DB</span> Dashboard
         </a>
         <div class="nav-section">Estoque</div>
         <a href="/Materiais" class="nav-link @(ViewContext.RouteData.Values["controller"]?.ToString() == "Materiais" ? "active" : "")">
-            <span class="icon">📦</span> Materiais
+            <span class="icon">MT</span> Materiais
         </a>
         <div class="nav-section">Cadastros</div>
         <a href="/Clientes" class="nav-link @(ViewContext.RouteData.Values["controller"]?.ToString() == "Clientes" ? "active" : "")">
-            <span class="icon">👥</span> Clientes
+            <span class="icon">CL</span> Clientes
         </a>
         <a href="/Produtos" class="nav-link @(ViewContext.RouteData.Values["controller"]?.ToString() == "Produtos" ? "active" : "")">
-            <span class="icon">🪑</span> Produtos
+            <span class="icon">PR</span> Produtos
         </a>
-        <div class="nav-section">Operações</div>
+        <div class="nav-section">Operacoes</div>
         <a href="/Pedidos" class="nav-link @(ViewContext.RouteData.Values["controller"]?.ToString() == "Pedidos" ? "active" : "")">
-            <span class="icon">📋</span> Pedidos
+            <span class="icon">PD</span> Pedidos
         </a>
         <a href="/Pedidos?status=EmProducao" class="nav-link">
-            <span class="icon">🔨</span> Em Produção
+            <span class="icon">EP</span> Em Producao
         </a>
     </nav>
 </aside>
@@ -227,7 +233,7 @@
 <div class="main-content">
     <header class="topbar">
         <div class="topbar-left">
-            <button type="button" class="mobile-menu-btn" id="mobile-menu-toggle" aria-label="Abrir menu">☰</button>
+            <button type="button" class="mobile-menu-btn" id="mobile-menu-toggle" aria-label="Abrir menu">=</button>
             <h1>@ViewData["Title"]</h1>
         </div>
         <div class="topbar-actions">@RenderSection("TopbarActions", required: false)</div>
@@ -238,13 +244,19 @@
         @if (TempData["Sucesso"] is string sucesso)
         {
             <div class="flash-messages">
-                <div class="alert alert-success">✅ @sucesso</div>
+                <div class="alert alert-success" data-flash>
+                    <span>Sucesso: @sucesso</span>
+                    <button type="button" class="alert-close" data-close-alert aria-label="Fechar">x</button>
+                </div>
             </div>
         }
         @if (TempData["Erro"] is string erro)
         {
             <div class="flash-messages">
-                <div class="alert alert-danger">❌ @erro</div>
+                <div class="alert alert-danger" data-flash>
+                    <span>Erro: @erro</span>
+                    <button type="button" class="alert-close" data-close-alert aria-label="Fechar">x</button>
+                </div>
             </div>
         }
 
@@ -253,12 +265,52 @@
 </div>
 
 <script>
-// Event delegation para confirmação antes de excluir
-document.addEventListener('submit', function(e) {
+document.addEventListener('submit', function (e) {
     const form = e.target;
+    if (!(form instanceof HTMLFormElement))
+        return;
+
     if (form.dataset.confirm && !confirm(form.dataset.confirm)) {
         e.preventDefault();
+        return;
     }
+
+    if ((form.method || '').toLowerCase() !== 'post')
+        return;
+
+    if (window.jQuery) {
+        const $form = window.jQuery(form);
+        if ($form.data('validator') && !$form.valid())
+            return;
+    }
+
+    const submitBtn = form.querySelector('button[type="submit"], input[type="submit"]');
+    if (!submitBtn || submitBtn.hasAttribute('data-no-loading'))
+        return;
+
+    submitBtn.setAttribute('disabled', 'disabled');
+    submitBtn.classList.add('is-loading');
+
+    if (submitBtn.tagName === 'BUTTON') {
+        submitBtn.setAttribute('data-original-text', submitBtn.textContent ?? '');
+        submitBtn.textContent = 'Salvando';
+    }
+});
+
+document.addEventListener('click', function (e) {
+    const target = e.target;
+    if (!(target instanceof HTMLElement))
+        return;
+
+    if (!target.matches('[data-close-alert]'))
+        return;
+
+    const alert = target.closest('.alert');
+    if (!alert)
+        return;
+
+    alert.classList.add('fade-out');
+    setTimeout(() => alert.remove(), 240);
 });
 
 const menuBtn = document.getElementById('mobile-menu-toggle');
@@ -278,9 +330,8 @@ if (menuBtn) {
     });
 }
 
-if (sidebarBackdrop) {
+if (sidebarBackdrop)
     sidebarBackdrop.addEventListener('click', fecharMenuMobile);
-}
 
 navLinks.forEach(link => {
     link.addEventListener('click', () => {
@@ -298,9 +349,15 @@ document.addEventListener('keydown', (e) => {
 
 document.addEventListener('DOMContentLoaded', function () {
     const firstInvalid = document.querySelector('.input-validation-error');
-    if (firstInvalid) {
+    if (firstInvalid)
         firstInvalid.scrollIntoView({ behavior: 'smooth', block: 'center' });
-    }
+
+    document.querySelectorAll('[data-flash]').forEach(alert => {
+        setTimeout(() => {
+            alert.classList.add('fade-out');
+            setTimeout(() => alert.remove(), 260);
+        }, 5500);
+    });
 });
 </script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.7.1/jquery.min.js"></script>
@@ -321,3 +378,4 @@ document.addEventListener('DOMContentLoaded', function () {
 </script>
 </body>
 </html>
+

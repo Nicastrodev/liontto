@@ -1,8 +1,5 @@
-// =============================================================
+﻿// =============================================================
 // Repository/Repositorios.cs
-// CONCEITO POO: HERANÇA CONCRETA
-// Cada repositório herda MySqlRepository<T> e adiciona
-// apenas os métodos específicos da entidade.
 // =============================================================
 
 using Microsoft.EntityFrameworkCore;
@@ -11,33 +8,25 @@ using LionttoMoveis.Models;
 
 namespace LionttoMoveis.Repository
 {
-    // ----------------------------------------------------------
-    // MaterialRepository
-    // ----------------------------------------------------------
     public class MaterialRepository : MySqlRepository<Material>
     {
         public MaterialRepository(AppDbContext ctx) : base(ctx) { }
 
-        /// <summary>Materiais ordenados por nome.</summary>
         public async Task<List<Material>> ObterOrdenadosAsync()
             => await _ctx.Materiais
+                .AsNoTracking()
                 .OrderBy(m => m.Nome)
                 .ToListAsync();
 
-        /// <summary>Materiais com estoque abaixo ou igual ao mínimo.</summary>
         public async Task<List<Material>> ObterEstoqueBaixoAsync()
             => await _ctx.Materiais
+                .AsNoTracking()
                 .Where(m => m.Quantidade <= m.QuantidadeMinima)
                 .OrderBy(m => m.Quantidade)
                 .ToListAsync();
 
-        /// <summary>
-        /// Incrementa/decrementa a quantidade usando UPDATE direto.
-        /// Mais seguro que buscar + salvar (evita race condition).
-        /// </summary>
         public async Task AtualizarQuantidadeAsync(int id, double delta)
         {
-            // ExecuteUpdateAsync: UPDATE materiais SET quantidade = quantidade + delta WHERE id = id
             await _ctx.Materiais
                 .Where(m => m.Id == id)
                 .ExecuteUpdateAsync(s =>
@@ -45,66 +34,93 @@ namespace LionttoMoveis.Repository
         }
     }
 
-    // ----------------------------------------------------------
-    // ClienteRepository
-    // ----------------------------------------------------------
     public class ClienteRepository : MySqlRepository<Cliente>
     {
         public ClienteRepository(AppDbContext ctx) : base(ctx) { }
 
         public async Task<List<Cliente>> ObterOrdenadosAsync()
             => await _ctx.Clientes
+                .AsNoTracking()
                 .OrderBy(c => c.Nome)
                 .ToListAsync();
     }
 
-    // ----------------------------------------------------------
-    // ProdutoRepository
-    // ----------------------------------------------------------
     public class ProdutoRepository : MySqlRepository<Produto>
     {
         public ProdutoRepository(AppDbContext ctx) : base(ctx) { }
 
         public async Task<List<Produto>> ObterOrdenadosAsync()
             => await _ctx.Produtos
+                .AsNoTracking()
                 .OrderBy(p => p.Nome)
                 .ToListAsync();
 
-        /// <summary>Produto com a lista de materiais carregada (Include).</summary>
         public async Task<Produto?> ObterComMateriaisAsync(int id)
             => await _ctx.Produtos
+                .AsNoTracking()
                 .Include(p => p.Materiais)
                 .FirstOrDefaultAsync(p => p.Id == id);
 
         public async Task<List<Produto>> ObterTodosComMateriaisAsync()
             => await _ctx.Produtos
+                .AsNoTracking()
                 .Include(p => p.Materiais)
                 .OrderBy(p => p.Nome)
                 .ToListAsync();
+
+        public async Task<bool> AtualizarComMateriaisAsync(int id, Produto dadosAtualizados, List<MaterialDoProduto> materiais)
+        {
+            var produto = await _ctx.Produtos
+                .Include(p => p.Materiais)
+                .FirstOrDefaultAsync(p => p.Id == id);
+
+            if (produto is null)
+                return false;
+
+            if (dadosAtualizados.RowVersion is null || dadosAtualizados.RowVersion.Length == 0)
+                throw new DbUpdateConcurrencyException("Token de concorrencia ausente para atualizar o produto.");
+
+            _ctx.Entry(produto)
+                .Property(nameof(EntidadeBase.RowVersion))
+                .OriginalValue = dadosAtualizados.RowVersion;
+
+            produto.Nome = dadosAtualizados.Nome;
+            produto.Descricao_ = dadosAtualizados.Descricao_;
+            produto.PrecoBase = dadosAtualizados.PrecoBase;
+            produto.TempoProducaoDias = dadosAtualizados.TempoProducaoDias;
+
+            _ctx.MateriaisDoProduto.RemoveRange(produto.Materiais);
+
+            foreach (var material in materiais)
+                material.ProdutoId = id;
+
+            produto.Materiais = materiais;
+
+            await _ctx.SaveChangesAsync();
+            return true;
+        }
     }
 
-    // ----------------------------------------------------------
-    // PedidoRepository
-    // ----------------------------------------------------------
     public class PedidoRepository : MySqlRepository<Pedido>
     {
         public PedidoRepository(AppDbContext ctx) : base(ctx) { }
 
-        /// <summary>Todos os pedidos com itens, do mais recente ao mais antigo.</summary>
         public async Task<List<Pedido>> ObterTodosOrdenadosAsync()
             => await _ctx.Pedidos
+                .AsNoTracking()
                 .Include(p => p.Itens)
                 .OrderByDescending(p => p.DataPedido)
                 .ToListAsync();
 
-        /// <summary>Pedido completo com itens.</summary>
         public async Task<Pedido?> ObterComItensAsync(int id)
             => await _ctx.Pedidos
+                .AsNoTracking()
                 .Include(p => p.Itens)
                 .FirstOrDefaultAsync(p => p.Id == id);
 
         public async Task<List<Pedido>> ObterPorStatusAsync(StatusPedido status)
             => await _ctx.Pedidos
+                .AsNoTracking()
                 .Include(p => p.Itens)
                 .Where(p => p.Status == status)
                 .OrderByDescending(p => p.DataPedido)
@@ -112,6 +128,7 @@ namespace LionttoMoveis.Repository
 
         public async Task<List<Pedido>> ObterPorClienteAsync(int clienteId)
             => await _ctx.Pedidos
+                .AsNoTracking()
                 .Include(p => p.Itens)
                 .Where(p => p.ClienteId == clienteId)
                 .OrderByDescending(p => p.DataPedido)
@@ -125,9 +142,6 @@ namespace LionttoMoveis.Repository
                 .ToDictionaryAsync(x => x.Status, x => x.Count);
         }
 
-        /// <summary>
-        /// Insere pedido com itens (cascade automático pelo EF Core).
-        /// </summary>
         public async Task InserirComItensAsync(Pedido pedido)
         {
             pedido.CriadoEm = DateTime.Now;
@@ -135,31 +149,37 @@ namespace LionttoMoveis.Repository
             await _ctx.SaveChangesAsync();
         }
 
-        /// <summary>
-        /// Atualiza apenas campos do cabeçalho do pedido (sem tocar nos itens).
-        /// </summary>
-        public async Task AtualizarStatusAsync(Pedido pedido)
+        public async Task<bool> AtualizarStatusAsync(int pedidoId, StatusPedido status, DateTime? dataEntregaReal, byte[] rowVersion)
         {
-            _ctx.Entry(pedido).State = EntityState.Modified;
-            // Marca os itens como não modificados para não alterar itens existentes
-            foreach (var item in pedido.Itens)
-                _ctx.Entry(item).State = EntityState.Unchanged;
+            var pedido = await _ctx.Pedidos.FirstOrDefaultAsync(p => p.Id == pedidoId);
+            if (pedido is null)
+                return false;
+
+            if (rowVersion is null || rowVersion.Length == 0)
+                throw new DbUpdateConcurrencyException("Token de concorrencia ausente para atualizar o pedido.");
+
+            _ctx.Entry(pedido)
+                .Property(nameof(EntidadeBase.RowVersion))
+                .OriginalValue = rowVersion;
+
+            pedido.Status = status;
+            pedido.DataEntregaReal = dataEntregaReal;
             await _ctx.SaveChangesAsync();
+            return true;
         }
     }
 
-    // ----------------------------------------------------------
-    // MovimentacaoRepository
-    // ----------------------------------------------------------
     public class MovimentacaoRepository : MySqlRepository<Movimentacao>
     {
         public MovimentacaoRepository(AppDbContext ctx) : base(ctx) { }
 
         public async Task<List<Movimentacao>> ObterPorMaterialAsync(int materialId, int limite = 10)
             => await _ctx.Movimentacoes
+                .AsNoTracking()
                 .Where(m => m.MaterialId == materialId)
                 .OrderByDescending(m => m.DataMovimentacao)
                 .Take(limite)
                 .ToListAsync();
     }
 }
+

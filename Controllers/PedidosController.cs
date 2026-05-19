@@ -3,6 +3,7 @@
 // =============================================================
 
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
 using LionttoMoveis.Helpers;
 using LionttoMoveis.Models;
 using LionttoMoveis.Repository;
@@ -89,9 +90,9 @@ namespace LionttoMoveis.Controllers
 
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> AtualizarStatus(int id, string acao)
+        public async Task<IActionResult> AtualizarStatus(int id, string acao, byte[] rowVersion)
         {
-            var pedido = await _pedidos.ObterComItensAsync(id);
+            var pedido = await _pedidos.ObterPorIdAsync(id);
             if (pedido is null) return NotFound();
 
             if (acao == "avancar")
@@ -99,7 +100,17 @@ namespace LionttoMoveis.Controllers
             else if (acao == "voltar" && pedido.Status != StatusPedido.Aguardando)
                 pedido.Status = (StatusPedido)((int)pedido.Status - 1);
 
-            await _pedidos.AtualizarStatusAsync(pedido);
+            try
+            {
+                var atualizado = await _pedidos.AtualizarStatusAsync(pedido.Id, pedido.Status, pedido.DataEntregaReal, rowVersion);
+                if (!atualizado) return NotFound();
+            }
+            catch (DbUpdateConcurrencyException)
+            {
+                TempData["Erro"] = "Este pedido foi atualizado por outro usuario. Recarregue a pagina e tente novamente.";
+                return RedirectToAction(nameof(Ver), new { id });
+            }
+
             TempData["Sucesso"] = $"Status atualizado: {pedido.StatusLabel}";
             return RedirectToAction(nameof(Ver), new { id });
         }
@@ -108,7 +119,7 @@ namespace LionttoMoveis.Controllers
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Excluir(int id)
         {
-            var pedido = await _pedidos.ObterComItensAsync(id);
+            var pedido = await _pedidos.ObterPorIdAsync(id);
             if (pedido?.Status == StatusPedido.Entregue)
             {
                 TempData["Erro"] = "Nao e possivel excluir pedido ja entregue.";

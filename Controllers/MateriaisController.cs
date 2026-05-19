@@ -3,6 +3,7 @@
 // =============================================================
 
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
 using LionttoMoveis.Helpers;
 using LionttoMoveis.Models;
 using LionttoMoveis.Repository;
@@ -78,7 +79,16 @@ namespace LionttoMoveis.Controllers
             material.CriadoEm = existente.CriadoEm;
             material.Quantidade = existente.Quantidade;
 
-            await _materiais.AtualizarAsync(material);
+            try
+            {
+                await _materiais.AtualizarAsync(material);
+            }
+            catch (DbUpdateConcurrencyException)
+            {
+                TempData["Erro"] = "Este material foi alterado por outro usuario. Reabra a tela e tente novamente.";
+                return RedirectToAction(nameof(Editar), new { id });
+            }
+
             TempData["Sucesso"] = "Material atualizado!";
             return RedirectToAction(nameof(Index));
         }

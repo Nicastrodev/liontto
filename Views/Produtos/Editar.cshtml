@@ -8,6 +8,7 @@
         <div asp-validation-summary="ModelOnly"></div>
 
         <input type="hidden" name="CriadoEm" value="@Model.Produto.CriadoEm.ToString("o")"/>
+        <input type="hidden" name="RowVersion" value="@Convert.ToBase64String(Model.Produto.RowVersion ?? Array.Empty<byte>())"/>
 
         <div class="form-grid">
             <div class="form-group" style="grid-column:1/-1;">

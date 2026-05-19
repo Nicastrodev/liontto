@@ -1,7 +1,7 @@
 using LionttoMoveis.Data;
+using LionttoMoveis.Helpers;
 using LionttoMoveis.Repository;
 using LionttoMoveis.Services;
-using Microsoft.AspNetCore.Diagnostics;
 using Microsoft.AspNetCore.HttpOverrides;
 using Microsoft.EntityFrameworkCore;
 
@@ -61,29 +61,14 @@ var app = builder.Build();
 
 app.UseForwardedHeaders();
 
-if (!app.Environment.IsDevelopment())
+if (app.Environment.IsDevelopment())
 {
-    app.UseExceptionHandler(errorApp =>
-    {
-        errorApp.Run(async context =>
-        {
-            context.Response.StatusCode = StatusCodes.Status500InternalServerError;
-            context.Response.ContentType = "application/json";
-
-            var feature = context.Features.Get<IExceptionHandlerFeature>();
-            await context.Response.WriteAsJsonAsync(new
-            {
-                error = "Internal server error.",
-                detail = feature?.Error?.Message
-            });
-        });
-    });
-
-    app.UseHsts();
+    app.UseDeveloperExceptionPage();
 }
 else
 {
-    app.UseDeveloperExceptionPage();
+    app.UseHsts();
+    app.UseMiddleware<GlobalExceptionMiddleware>();
 }
 
 app.UseStaticFiles();

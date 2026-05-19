@@ -3,6 +3,7 @@
 // =============================================================
 
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
 using LionttoMoveis.Helpers;
 using LionttoMoveis.Models;
 using LionttoMoveis.Repository;
@@ -69,7 +70,16 @@ namespace LionttoMoveis.Controllers
             cliente.Id = id;
             cliente.CriadoEm = existente.CriadoEm;
 
-            await _clientes.AtualizarAsync(cliente);
+            try
+            {
+                await _clientes.AtualizarAsync(cliente);
+            }
+            catch (DbUpdateConcurrencyException)
+            {
+                TempData["Erro"] = "Este cliente foi alterado por outro usuario. Reabra a tela e tente novamente.";
+                return RedirectToAction(nameof(Editar), new { id });
+            }
+
             TempData["Sucesso"] = "Cliente atualizado!";
             return RedirectToAction(nameof(Index));
         }

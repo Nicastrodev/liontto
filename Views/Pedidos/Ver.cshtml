@@ -90,6 +90,7 @@
                 <form method="post" action="/Pedidos/AtualizarStatus/@p.Id" style="margin-bottom:8px;">
                     @Html.AntiForgeryToken()
                     <input type="hidden" name="acao" value="avancar"/>
+                    <input type="hidden" name="rowVersion" value="@Convert.ToBase64String(p.RowVersion ?? Array.Empty<byte>())"/>
                     <button type="submit" class="btn @(p.Status == StatusPedido.Aguardando ? "btn-primary" : p.Status == StatusPedido.EmProducao ? "btn-success" : "btn-accent")" style="width:100%;">
                         @(p.Status == StatusPedido.Aguardando ? "🔨 Iniciar Produção" :
                           p.Status == StatusPedido.EmProducao ? "✅ Marcar como Pronto" : "📦 Confirmar Entrega")
@@ -101,6 +102,7 @@
                     <form method="post" action="/Pedidos/AtualizarStatus/@p.Id">
                         @Html.AntiForgeryToken()
                         <input type="hidden" name="acao" value="voltar"/>
+                        <input type="hidden" name="rowVersion" value="@Convert.ToBase64String(p.RowVersion ?? Array.Empty<byte>())"/>
                         <button type="submit" class="btn btn-outline" style="width:100%;">↩ Voltar Status</button>
                     </form>
                 }

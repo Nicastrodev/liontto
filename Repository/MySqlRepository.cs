@@ -27,10 +27,14 @@ namespace LionttoMoveis.Repository
         }
 
         public virtual async Task<List<T>> ObterTodosAsync()
-            => await _set.ToListAsync();
+            => await _set
+                .AsNoTracking()
+                .ToListAsync();
 
         public virtual async Task<T?> ObterPorIdAsync(int id)
-            => await _set.FindAsync(id);
+            => await _set
+                .AsNoTracking()
+                .FirstOrDefaultAsync(e => e.Id == id);
 
         public async Task InserirAsync(T entidade)
         {
@@ -41,7 +45,19 @@ namespace LionttoMoveis.Repository
 
         public async Task AtualizarAsync(T entidade)
         {
-            _ctx.Entry(entidade).State = EntityState.Modified;
+            var entidadeRastreada = await _set.FindAsync(entidade.Id);
+            if (entidadeRastreada is null)
+                throw new KeyNotFoundException($"Registro com id {entidade.Id} nao foi encontrado.");
+
+            if (entidade.RowVersion is null || entidade.RowVersion.Length == 0)
+                throw new DbUpdateConcurrencyException("Token de concorrencia ausente para atualizar o registro.");
+
+            var criadoEmOriginal = entidadeRastreada.CriadoEm;
+            var entrada = _ctx.Entry(entidadeRastreada);
+            entrada.Property(nameof(EntidadeBase.RowVersion)).OriginalValue = entidade.RowVersion;
+            entrada.CurrentValues.SetValues(entidade);
+            entidadeRastreada.CriadoEm = criadoEmOriginal;
+
             await _ctx.SaveChangesAsync();
         }
 
