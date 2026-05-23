@@ -15,7 +15,10 @@
 }
 
 @section TopbarActions {
-    <a href="/Pedidos/Novo" class="btn btn-accent">Novo Pedido</a>
+    <a href="/Pedidos/Novo" class="btn btn-accent">
+        <i class="bi bi-plus-circle" aria-hidden="true"></i>
+        Novo Pedido
+    </a>
 }
 
 <style>
@@ -124,19 +127,19 @@
 
 <div class="stats-grid">
     <div class="stat-card">
-        <div class="stat-icon brown">CL</div>
+        <div class="stat-icon brown"><i class="bi bi-people" aria-hidden="true"></i></div>
         <div><div class="stat-value">@Model.TotalClientes</div><div class="stat-label">Ativos</div></div>
     </div>
     <div class="stat-card">
-        <div class="stat-icon gold">PR</div>
+        <div class="stat-icon gold"><i class="bi bi-grid" aria-hidden="true"></i></div>
         <div><div class="stat-value">@Model.TotalProdutos</div><div class="stat-label">Catalogo</div></div>
     </div>
     <div class="stat-card">
-        <div class="stat-icon green">MT</div>
+        <div class="stat-icon green"><i class="bi bi-box-seam" aria-hidden="true"></i></div>
         <div><div class="stat-value">@Model.TotalMateriais</div><div class="stat-label">Cadastrados</div></div>
     </div>
     <div class="stat-card">
-        <div class="stat-icon blue">PD</div>
+        <div class="stat-icon blue"><i class="bi bi-receipt" aria-hidden="true"></i></div>
         <div>
             <div class="stat-value">@(pedidosAguardando + pedidosEmProducao + pedidosPronto + pedidosEntregue)</div>
             <div class="stat-label">Total</div>
