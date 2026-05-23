@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
     <title>@ViewData["Title"] - Liontto Moveis</title>
     <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@600;700&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet"/>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" rel="stylesheet"/>
     <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
     <style>
         :root {
@@ -29,7 +30,8 @@
         .nav-section { padding:12px 24px 6px; font-size:10px; letter-spacing:.14em; text-transform:uppercase; color:rgba(255,255,255,.3); font-weight:600; }
         .nav-link { display:flex; align-items:center; gap:12px; padding:11px 24px; color:rgba(255,255,255,.7); text-decoration:none; font-size:14px; transition:all .2s; border-left:3px solid transparent; }
         .nav-link:hover, .nav-link.active { color:#fff; background:rgba(255,255,255,.07); border-left-color:var(--accent); }
-        .nav-link .icon { font-size:17px; width:20px; text-align:center; }
+        .nav-link .icon { font-size:16px; width:20px; text-align:center; opacity:.92; }
+        .nav-link:hover .icon, .nav-link.active .icon { color:var(--accent); opacity:1; }
         .sidebar-backdrop { display:none; }
 
         /* MAIN */
@@ -206,25 +208,25 @@
     <nav class="sidebar-nav">
         <div class="nav-section">Principal</div>
         <a href="/" class="nav-link @(ViewContext.RouteData.Values["controller"]?.ToString() == "Home" ? "active" : "")">
-            <span class="icon">DB</span> Dashboard
+            <i class="bi bi-speedometer2 icon" aria-hidden="true"></i> Dashboard
         </a>
         <div class="nav-section">Estoque</div>
         <a href="/Materiais" class="nav-link @(ViewContext.RouteData.Values["controller"]?.ToString() == "Materiais" ? "active" : "")">
-            <span class="icon">MT</span> Materiais
+            <i class="bi bi-box-seam icon" aria-hidden="true"></i> Materiais
         </a>
         <div class="nav-section">Cadastros</div>
         <a href="/Clientes" class="nav-link @(ViewContext.RouteData.Values["controller"]?.ToString() == "Clientes" ? "active" : "")">
-            <span class="icon">CL</span> Clientes
+            <i class="bi bi-people icon" aria-hidden="true"></i> Clientes
         </a>
         <a href="/Produtos" class="nav-link @(ViewContext.RouteData.Values["controller"]?.ToString() == "Produtos" ? "active" : "")">
-            <span class="icon">PR</span> Produtos
+            <i class="bi bi-grid icon" aria-hidden="true"></i> Produtos
         </a>
         <div class="nav-section">Operacoes</div>
         <a href="/Pedidos" class="nav-link @(ViewContext.RouteData.Values["controller"]?.ToString() == "Pedidos" ? "active" : "")">
-            <span class="icon">PD</span> Pedidos
+            <i class="bi bi-receipt icon" aria-hidden="true"></i> Pedidos
         </a>
         <a href="/Pedidos?status=EmProducao" class="nav-link">
-            <span class="icon">EP</span> Em Producao
+            <i class="bi bi-hammer icon" aria-hidden="true"></i> Em Producao
         </a>
     </nav>
 </aside>
