@@ -1,55 +1,80 @@
-@* Views/Produtos/Ver.cshtml *@
 @model Produto
 @{ ViewData["Title"] = Model.Nome; }
 
 @section TopbarActions {
-    <a href="/Produtos/Editar/@Model.Id" class="btn btn-outline">✏️ Editar</a>
-    <a href="/Produtos" class="btn btn-primary">← Voltar</a>
+    <a href="/Produtos/Editar/@Model.Id" class="btn btn-outline">
+        <i class="bi bi-pencil" aria-hidden="true"></i>
+        Editar
+    </a>
+    <a href="/Produtos" class="btn btn-primary">Voltar</a>
+}
+
+@{
+    var matsEstoque = ViewBag.MateriaisEstoque as List<(MaterialDoProduto mat, double estoqueAtual)>;
+    var totalMateriais = matsEstoque?.Count ?? 0;
 }
 
 <div class="two-col">
     <div class="card">
-        <span class="card-title">Informações</span>
+        <span class="card-title">Informacoes</span>
         <div class="table-wrapper">
-            <table style="width:100%;">
-            <tr><td class="text-muted" style="padding:8px 0;width:140px;">Nome</td><td class="fw-600">@Model.Nome</td></tr>
-            <tr><td class="text-muted" style="padding:8px 0;">Descrição</td><td>@(string.IsNullOrEmpty(Model.Descricao_) ? "—" : Model.Descricao_)</td></tr>
-            <tr><td class="text-muted" style="padding:8px 0;">Preço Base</td>
-                <td class="fw-600" style="color:var(--accent);">@Model.PrecoBase.ToString("C", new System.Globalization.CultureInfo("pt-BR"))</td></tr>
-            <tr><td class="text-muted" style="padding:8px 0;">Tempo Produção</td>
-                <td><span class="badge badge-info">@Model.TempoProducaoDias dias</span></td></tr>
+            <table class="responsive-table">
+                <tbody>
+                    <tr>
+                        <td class="text-muted" data-label="Campo">Nome</td>
+                        <td class="fw-600" data-label="Valor">@Model.Nome</td>
+                    </tr>
+                    <tr>
+                        <td class="text-muted" data-label="Campo">Descricao</td>
+                        <td data-label="Valor">@(string.IsNullOrEmpty(Model.Descricao_) ? "-" : Model.Descricao_)</td>
+                    </tr>
+                    <tr>
+                        <td class="text-muted" data-label="Campo">Preco Base</td>
+                        <td class="fw-600" data-label="Valor" style="color:var(--accent);">@Model.PrecoBase.ToString("C", new System.Globalization.CultureInfo("pt-BR"))</td>
+                    </tr>
+                    <tr>
+                        <td class="text-muted" data-label="Campo">Tempo Producao</td>
+                        <td data-label="Valor"><span class="badge badge-info">@Model.TempoProducaoDias dias</span></td>
+                    </tr>
+                </tbody>
             </table>
         </div>
     </div>
 
     <div class="card">
-        <span class="card-title">Materiais Necessários</span>
-        @{
-            var matsEstoque = ViewBag.MateriaisEstoque as List<(MaterialDoProduto mat, double estoqueAtual)>;
-        }
+        <span class="card-title">Materiais Necessarios (@totalMateriais)</span>
         @if (matsEstoque != null && matsEstoque.Any())
         {
             <div class="table-wrapper">
-                <table>
-                <thead><tr><th>Material</th><th>Necessário</th><th>Estoque</th></tr></thead>
-                <tbody>
-                    @foreach (var (mat, estoque) in matsEstoque)
-                    {
-                        <tr>
-                            <td class="fw-600">@mat.Nome</td>
-                            <td>@mat.QuantidadeNecessaria @mat.Unidade</td>
-                            <td>
-                                @if (estoque >= mat.QuantidadeNecessaria)
-                                { <span class="badge badge-ok">✅ @estoque</span> }
-                                else
-                                { <span class="badge badge-danger">⚠️ @estoque</span> }
-                            </td>
-                        </tr>
-                    }
-                </tbody>
+                <table class="responsive-table">
+                    <thead>
+                        <tr><th>Material</th><th>Necessario</th><th>Estoque</th></tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var (mat, estoque) in matsEstoque)
+                        {
+                            <tr>
+                                <td class="fw-600" data-label="Material">@mat.Nome</td>
+                                <td data-label="Necessario">@mat.QuantidadeNecessaria @mat.Unidade</td>
+                                <td data-label="Estoque">
+                                    @if (estoque >= mat.QuantidadeNecessaria)
+                                    {
+                                        <span class="badge badge-ok">@estoque disponivel</span>
+                                    }
+                                    else
+                                    {
+                                        <span class="badge badge-danger">@estoque disponivel</span>
+                                    }
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
                 </table>
             </div>
         }
-        else { <p class="text-muted">Nenhum material associado.</p> }
+        else
+        {
+            <p class="text-muted">Nenhum material associado.</p>
+        }
     </div>
 </div>

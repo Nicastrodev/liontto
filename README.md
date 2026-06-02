@@ -27,7 +27,8 @@ Opcionalmente, em vez de URL unica, voce pode usar:
 Variaveis opcionais de bootstrap:
 
 - `DB_INIT_ON_STARTUP=true` (padrao)
-- `APPLY_MIGRATIONS_ON_STARTUP=true` (recomendado em producao)
+- `APPLY_MIGRATIONS_ON_STARTUP=false` (padrao; mantenha falso se as tabelas ja existem)
+- `CREATE_SCHEMA_ON_STARTUP=false` (padrao; use `true` apenas para banco vazio em ambiente controlado)
 - `SEED_ON_STARTUP=false`
 - `DB_FAIL_FAST_ON_INIT_ERROR=true` (recomendado para nao subir com frontend quebrado por schema ausente)
 

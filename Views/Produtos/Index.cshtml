@@ -1,32 +1,54 @@
-@* Views/Produtos/Index.cshtml *@
 @model List<Produto>
-@{ ViewData["Title"] = "Catálogo de Produtos"; }
+@{ ViewData["Title"] = "Catalogo de Produtos"; }
 
-@section TopbarActions { <a href="/Produtos/Novo" class="btn btn-accent">➕ Novo Produto</a> }
+@section TopbarActions {
+    <a href="/Produtos/Novo" class="btn btn-accent">
+        <i class="bi bi-plus-circle" aria-hidden="true"></i>
+        Novo Produto
+    </a>
+}
 
 @if (Model.Any())
 {
     <div class="card">
         <div class="table-wrapper">
-            <table>
-                <thead><tr><th>Produto</th><th>Descrição</th><th>Preço Base</th><th>Prod. (dias)</th><th>Materiais</th><th>Ações</th></tr></thead>
+            <table class="responsive-table">
+                <thead>
+                    <tr>
+                        <th>Produto</th>
+                        <th>Descricao</th>
+                        <th>Preco Base</th>
+                        <th>Prod. (dias)</th>
+                        <th>Materiais</th>
+                        <th>Acoes</th>
+                    </tr>
+                </thead>
                 <tbody>
                     @foreach (var p in Model)
                     {
                         <tr>
-                            <td class="fw-600">🪑 @p.Nome</td>
-                            <td class="text-muted" style="font-size:13px;">@(string.IsNullOrEmpty(p.Descricao_) ? "—" : p.Descricao_)</td>
-                            <td class="fw-600" style="color:var(--accent);">@p.PrecoBase.ToString("C", new System.Globalization.CultureInfo("pt-BR"))</td>
-                            <td><span class="badge badge-info">@p.TempoProducaoDias dias</span></td>
-                            <td><span class="badge badge-secondary">@p.Materiais.Count mat.</span></td>
-                            <td>
-                                <div class="flex gap-2">
-                                    <a href="/Produtos/Ver/@p.Id"    class="btn btn-outline btn-sm">👁</a>
-                                    <a href="/Produtos/Editar/@p.Id" class="btn btn-outline btn-sm">✏️</a>
+                            <td class="fw-600" data-label="Produto">@p.Nome</td>
+                            <td class="text-muted" data-label="Descricao">@(string.IsNullOrEmpty(p.Descricao_) ? "-" : p.Descricao_)</td>
+                            <td class="fw-600" data-label="Preco base" style="color:var(--accent);">@p.PrecoBase.ToString("C", new System.Globalization.CultureInfo("pt-BR"))</td>
+                            <td data-label="Producao"><span class="badge badge-info">@p.TempoProducaoDias dias</span></td>
+                            <td data-label="Materiais"><span class="badge badge-secondary">@p.Materiais.Count mat.</span></td>
+                            <td class="cell-actions" data-label="Acoes">
+                                <div class="row-actions">
+                                    <a href="/Produtos/Ver/@p.Id" class="btn btn-outline btn-sm">
+                                        <i class="bi bi-eye" aria-hidden="true"></i>
+                                        Ver
+                                    </a>
+                                    <a href="/Produtos/Editar/@p.Id" class="btn btn-outline btn-sm">
+                                        <i class="bi bi-pencil" aria-hidden="true"></i>
+                                        Editar
+                                    </a>
                                     <form method="post" action="/Produtos/Excluir/@p.Id"
                                           data-confirm="Remover o produto '@p.Nome'?">
                                         @Html.AntiForgeryToken()
-                                        <button type="submit" class="btn btn-danger btn-sm">🗑</button>
+                                        <button type="submit" class="btn btn-danger btn-sm">
+                                            <i class="bi bi-trash" aria-hidden="true"></i>
+                                            Excluir
+                                        </button>
                                     </form>
                                 </div>
                             </td>
@@ -41,7 +63,8 @@ else
 {
     <div class="card">
         <div class="empty-state">
-            <div class="icon">🪑</div><h3>Nenhum produto cadastrado</h3>
+            <div class="icon"><i class="bi bi-grid" aria-hidden="true"></i></div>
+            <h3>Nenhum produto cadastrado</h3>
             <a href="/Produtos/Novo" class="btn btn-primary mt-3">Cadastrar Produto</a>
         </div>
     </div>

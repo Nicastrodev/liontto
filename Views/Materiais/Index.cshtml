@@ -1,46 +1,93 @@
-@* ============================================================
-   Views/Materiais/Index.cshtml
-   ============================================================ *@
 @model List<Material>
 @{ ViewData["Title"] = "Controle de Estoque"; }
 
 @section TopbarActions {
-    <a href="/Materiais/Novo" class="btn btn-accent">➕ Novo Material</a>
+    <a href="/Materiais/Novo" class="btn btn-accent">
+        <i class="bi bi-plus-circle" aria-hidden="true"></i>
+        Novo Material
+    </a>
+}
+
+@if (TempData["ConfirmarExclusaoMaterialId"] is int materialId)
+{
+    <div class="card" style="border-color:rgba(181,48,48,.35); background:rgba(181,48,48,.04);">
+        <div class="flex justify-between items-center gap-3" style="flex-wrap:wrap;">
+            <div>
+                <strong>Confirmar exclusao de material vinculado</strong>
+                <p class="text-muted" style="margin-top:6px;">
+                    O material "@TempData["ConfirmarExclusaoMaterialNome"]" esta em uso. @TempData["ConfirmarExclusaoMaterialUso"]
+                    Produtos e pedidos que dependem dele ficarao sem esse material na composicao.
+                </p>
+            </div>
+            <form method="post" action="/Materiais/Excluir/@materialId"
+                  data-confirm="Tem certeza? Este material sera removido dos produtos e movimentacoes vinculadas.">
+                @Html.AntiForgeryToken()
+                <input type="hidden" name="confirmarVinculos" value="true"/>
+                <button type="submit" class="btn btn-danger">
+                    <i class="bi bi-exclamation-triangle" aria-hidden="true"></i>
+                    Excluir mesmo assim
+                </button>
+            </form>
+        </div>
+    </div>
 }
 
 @if (Model.Any())
 {
     <div class="card">
         <div class="table-wrapper">
-            <table>
+            <table class="responsive-table">
                 <thead>
                     <tr>
-                        <th>Material</th><th>Unidade</th><th>Qtd. Atual</th>
-                        <th>Qtd. Mínima</th><th>Preço Unit.</th><th>Status</th><th>Ações</th>
+                        <th>Material</th>
+                        <th>Unidade</th>
+                        <th>Qtd. Atual</th>
+                        <th>Qtd. Minima</th>
+                        <th>Preco Unit.</th>
+                        <th>Status</th>
+                        <th>Acoes</th>
                     </tr>
                 </thead>
                 <tbody>
                     @foreach (var m in Model)
                     {
                         <tr>
-                            <td class="fw-600">@m.Nome</td>
-                            <td class="text-muted">@m.Unidade</td>
-                            <td><strong>@m.Quantidade</strong></td>
-                            <td class="text-muted">@m.QuantidadeMinima</td>
-                            <td>@m.PrecoUnitario.ToString("C", new System.Globalization.CultureInfo("pt-BR"))</td>
-                            <td>
-                                @if (m.StatusEstoque == "critico")      { <span class="badge badge-danger">🔴 Crítico</span> }
-                                else if (m.StatusEstoque == "baixo")    { <span class="badge badge-warning">🟡 Baixo</span>  }
-                                else                                    { <span class="badge badge-ok">🟢 OK</span>          }
+                            <td class="fw-600" data-label="Material">@m.Nome</td>
+                            <td class="text-muted" data-label="Unidade">@m.Unidade</td>
+                            <td data-label="Qtd. atual"><strong>@m.Quantidade</strong></td>
+                            <td class="text-muted" data-label="Qtd. minima">@m.QuantidadeMinima</td>
+                            <td data-label="Preco unit.">@m.PrecoUnitario.ToString("C", new System.Globalization.CultureInfo("pt-BR"))</td>
+                            <td data-label="Status">
+                                @if (m.StatusEstoque == "critico")
+                                {
+                                    <span class="badge badge-danger">Critico</span>
+                                }
+                                else if (m.StatusEstoque == "baixo")
+                                {
+                                    <span class="badge badge-warning">Baixo</span>
+                                }
+                                else
+                                {
+                                    <span class="badge badge-ok">OK</span>
+                                }
                             </td>
-                            <td>
-                                <div class="flex gap-2">
-                                    <a href="/Materiais/Movimentar/@m.Id" class="btn btn-outline btn-sm">📥 Movimentar</a>
-                                    <a href="/Materiais/Editar/@m.Id"     class="btn btn-outline btn-sm">✏️</a>
+                            <td class="cell-actions" data-label="Acoes">
+                                <div class="row-actions">
+                                    <a href="/Materiais/Movimentar/@m.Id" class="btn btn-outline btn-sm">
+                                        <i class="bi bi-arrow-left-right" aria-hidden="true"></i>
+                                        Movimentar
+                                    </a>
+                                    <a href="/Materiais/Editar/@m.Id" class="btn btn-outline btn-sm">
+                                        <i class="bi bi-pencil" aria-hidden="true"></i>
+                                        Editar
+                                    </a>
                                     <form method="post" action="/Materiais/Excluir/@m.Id"
                                           data-confirm="Remover o material '@m.Nome'?">
                                         @Html.AntiForgeryToken()
-                                        <button type="submit" class="btn btn-danger btn-sm">🗑</button>
+                                        <button type="submit" class="btn btn-danger btn-sm">
+                                            <i class="bi bi-trash" aria-hidden="true"></i>
+                                            Excluir
+                                        </button>
                                     </form>
                                 </div>
                             </td>
@@ -55,7 +102,7 @@ else
 {
     <div class="card">
         <div class="empty-state">
-            <div class="icon">📦</div>
+            <div class="icon"><i class="bi bi-box-seam" aria-hidden="true"></i></div>
             <h3>Nenhum material cadastrado</h3>
             <a href="/Materiais/Novo" class="btn btn-primary mt-3">Cadastrar Material</a>
         </div>

@@ -7,6 +7,7 @@ using Microsoft.EntityFrameworkCore;
 using LionttoMoveis.Helpers;
 using LionttoMoveis.Models;
 using LionttoMoveis.Repository;
+using LionttoMoveis.Data;
 
 namespace LionttoMoveis.Controllers
 {
@@ -22,15 +23,17 @@ namespace LionttoMoveis.Controllers
     {
         private readonly ProdutoRepository _produtos;
         private readonly MaterialRepository _materiais;
+        private readonly AppDbContext _ctx;
 
-        public ProdutosController(ProdutoRepository prod, MaterialRepository mat)
+        public ProdutosController(ProdutoRepository prod, MaterialRepository mat, AppDbContext ctx)
         {
             _produtos = prod;
             _materiais = mat;
+            _ctx = ctx;
         }
 
         public async Task<IActionResult> Index()
-            => View(await _produtos.ObterOrdenadosAsync());
+            => View(await _produtos.ObterTodosComMateriaisAsync());
 
         public async Task<IActionResult> Novo()
             => View(await MontarFormularioAsync(new Produto(), ehEdicao: false));
@@ -55,7 +58,14 @@ namespace LionttoMoveis.Controllers
                 return await RetornarFormularioComErroAsync("Novo", produto, false, erroMateriais);
 
             produto.Materiais = materiaisDoProduto;
-            await _produtos.InserirAsync(produto);
+            try
+            {
+                await _produtos.InserirAsync(produto);
+            }
+            catch (DbUpdateException)
+            {
+                return await RetornarFormularioComErroAsync("Novo", produto, false, "Nao foi possivel salvar o produto. Revise preco, materiais e quantidades.");
+            }
 
             TempData["Sucesso"] = $"Produto \"{produto.Nome}\" cadastrado!";
             return RedirectToAction(nameof(Index));
@@ -115,28 +125,52 @@ namespace LionttoMoveis.Controllers
                 return await RetornarFormularioComErroAsync("Editar", produto, true, erroMateriais);
             }
 
+            existente.Nome = produto.Nome;
+            existente.Descricao_ = produto.Descricao_;
+            existente.PrecoBase = produto.PrecoBase;
+            existente.TempoProducaoDias = produto.TempoProducaoDias;
+
+            _ctx.MateriaisDoProduto.RemoveRange(existente.Materiais);
+
+            existente.Materiais = materiaisDoProduto;
+            foreach (var m in existente.Materiais)
+                m.ProdutoId = id;
+
             try
             {
-                var atualizado = await _produtos.AtualizarComMateriaisAsync(id, produto, materiaisDoProduto);
-                if (!atualizado)
-                    return NotFound();
+                await _ctx.SaveChangesAsync();
             }
-            catch (DbUpdateConcurrencyException)
+            catch (DbUpdateException)
             {
-                TempData["Erro"] = "Este produto foi alterado por outro usuario. Reabra a tela e tente novamente.";
-                return RedirectToAction(nameof(Editar), new { id });
+                return await RetornarFormularioComErroAsync("Editar", produto, true, "Nao foi possivel salvar o produto. Revise preco, materiais e quantidades.");
             }
-
             TempData["Sucesso"] = "Produto atualizado!";
             return RedirectToAction(nameof(Index));
         }
 
-        [HttpPost]
-        [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Excluir(int id)
+        [HttpGet]
+        [ActionName("Excluir")]
+        public IActionResult ExcluirGet(int id)
         {
-            await _produtos.ExcluirAsync(id);
-            TempData["Sucesso"] = "Produto removido.";
+            TempData["Erro"] = "Use o botao de excluir na listagem para remover um produto com seguranca.";
+            return RedirectToAction(nameof(Index));
+        }
+
+        [HttpPost]
+        [ActionName("Excluir")]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> ExcluirPost(int id)
+        {
+            try
+            {
+                await _produtos.ExcluirAsync(id);
+                TempData["Sucesso"] = "Produto removido.";
+            }
+            catch (DbUpdateException)
+            {
+                TempData["Erro"] = "Nao e possivel excluir este produto porque ele esta vinculado a pedidos ou outros registros.";
+            }
+
             return RedirectToAction(nameof(Index));
         }
 
@@ -197,10 +231,10 @@ namespace LionttoMoveis.Controllers
             produto.Descricao_ = NormalizarOpcional(produto.Descricao_);
         }
 
-        private static string? NormalizarOpcional(string? texto)
+        private static string NormalizarOpcional(string? texto)
         {
             if (string.IsNullOrWhiteSpace(texto))
-                return null;
+                return string.Empty;
 
             return texto.Trim();
         }

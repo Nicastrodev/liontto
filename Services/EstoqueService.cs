@@ -54,7 +54,7 @@ namespace LionttoMoveis.Services
                 NomeMaterial     = material.Nome,
                 Tipo             = tipo,
                 Quantidade       = quantidade,
-                Motivo           = motivo,
+                Motivo           = motivo ?? string.Empty,
                 DataMovimentacao = DateTime.Now
             });
 

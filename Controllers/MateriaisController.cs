@@ -45,7 +45,16 @@ namespace LionttoMoveis.Controllers
                 return View(material);
             }
 
-            await _materiais.InserirAsync(material);
+            try
+            {
+                await _materiais.InserirAsync(material);
+            }
+            catch (DbUpdateException)
+            {
+                TempData["Erro"] = "Nao foi possivel salvar o material. Revise quantidades e preco.";
+                return View(material);
+            }
+
             TempData["Sucesso"] = $"Material \"{material.Nome}\" cadastrado!";
             return RedirectToAction(nameof(Index));
         }
@@ -83,10 +92,10 @@ namespace LionttoMoveis.Controllers
             {
                 await _materiais.AtualizarAsync(material);
             }
-            catch (DbUpdateConcurrencyException)
+            catch (DbUpdateException)
             {
-                TempData["Erro"] = "Este material foi alterado por outro usuario. Reabra a tela e tente novamente.";
-                return RedirectToAction(nameof(Editar), new { id });
+                TempData["Erro"] = "Nao foi possivel atualizar o material. Revise quantidades e preco.";
+                return View(material);
             }
 
             TempData["Sucesso"] = "Material atualizado!";
@@ -106,6 +115,9 @@ namespace LionttoMoveis.Controllers
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Movimentar(int id, MovimentacaoViewModel vm)
         {
+            ModelState.Remove(nameof(MovimentacaoViewModel.Material));
+            ModelState.Remove(nameof(MovimentacaoViewModel.Historico));
+
             if (!ModelState.IsValid)
             {
                 TempData["Erro"] = ObterPrimeiroErroModelState() ?? "Confira os dados da movimentacao e tente novamente.";
@@ -132,15 +144,46 @@ namespace LionttoMoveis.Controllers
             return RedirectToAction(nameof(Index));
         }
 
+        [HttpGet]
+        [ActionName("Excluir")]
+        public IActionResult ExcluirGet(int id)
+        {
+            TempData["Erro"] = "Use o botao de excluir na listagem para remover um material com seguranca.";
+            return RedirectToAction(nameof(Index));
+        }
+
         [HttpPost]
+        [ActionName("Excluir")]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Excluir(int id)
+        public async Task<IActionResult> ExcluirPost(int id, bool confirmarVinculos = false)
         {
             var mat = await _materiais.ObterPorIdAsync(id);
             if (mat is not null)
             {
-                await _materiais.ExcluirAsync(id);
-                TempData["Sucesso"] = $"Material \"{mat.Nome}\" removido.";
+                if (confirmarVinculos)
+                {
+                    var removido = await _materiais.ExcluirComVinculosAsync(id);
+                    TempData[removido ? "Sucesso" : "Erro"] = removido
+                        ? $"Material \"{mat.Nome}\" removido junto com seus vinculos de produtos e movimentacoes."
+                        : "Material nao encontrado para exclusao.";
+
+                    return RedirectToAction(nameof(Index));
+                }
+
+                try
+                {
+                    await _materiais.ExcluirAsync(id);
+                    TempData["Sucesso"] = $"Material \"{mat.Nome}\" removido.";
+                }
+                catch (DbUpdateException)
+                {
+                    var uso = await _materiais.ObterResumoUsoAsync(id);
+                    TempData["Erro"] = "Este material esta vinculado a produtos ou movimentacoes. Confirme abaixo se deseja remover mesmo assim.";
+                    TempData["ConfirmarExclusaoMaterialId"] = id;
+                    TempData["ConfirmarExclusaoMaterialNome"] = mat.Nome;
+                    TempData["ConfirmarExclusaoMaterialUso"] =
+                        $"{uso.Produtos} produto(s) e {uso.Movimentacoes} movimentacao(oes) serao desvinculados.";
+                }
             }
             return RedirectToAction(nameof(Index));
         }
@@ -151,10 +194,10 @@ namespace LionttoMoveis.Controllers
             material.Unidade = (material.Unidade ?? string.Empty).Trim();
         }
 
-        private static string? NormalizarOpcional(string? texto)
+        private static string NormalizarOpcional(string? texto)
         {
             if (string.IsNullOrWhiteSpace(texto))
-                return null;
+                return string.Empty;
 
             return texto.Trim();
         }

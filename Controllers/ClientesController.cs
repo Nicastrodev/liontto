@@ -38,7 +38,15 @@ namespace LionttoMoveis.Controllers
                 return View(cliente);
             }
 
-            await _clientes.InserirAsync(cliente);
+            try
+            {
+                await _clientes.InserirAsync(cliente);
+            }
+            catch (DbUpdateException)
+            {
+                TempData["Erro"] = "Nao foi possivel salvar o cliente. Revise os campos e tente novamente.";
+                return View(cliente);
+            }
             TempData["Sucesso"] = $"Cliente \"{cliente.Nome}\" cadastrado!";
             return RedirectToAction(nameof(Index));
         }
@@ -74,19 +82,27 @@ namespace LionttoMoveis.Controllers
             {
                 await _clientes.AtualizarAsync(cliente);
             }
-            catch (DbUpdateConcurrencyException)
+            catch (DbUpdateException)
             {
-                TempData["Erro"] = "Este cliente foi alterado por outro usuario. Reabra a tela e tente novamente.";
-                return RedirectToAction(nameof(Editar), new { id });
+                TempData["Erro"] = "Nao foi possivel atualizar o cliente. Revise os campos e tente novamente.";
+                return View(cliente);
             }
-
             TempData["Sucesso"] = "Cliente atualizado!";
             return RedirectToAction(nameof(Index));
         }
 
+        [HttpGet]
+        [ActionName("Excluir")]
+        public IActionResult ExcluirGet(int id)
+        {
+            TempData["Erro"] = "Use o botao de excluir na listagem para remover um cliente com seguranca.";
+            return RedirectToAction(nameof(Index));
+        }
+
         [HttpPost]
+        [ActionName("Excluir")]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Excluir(int id)
+        public async Task<IActionResult> ExcluirPost(int id)
         {
             var temPedidos = (await _pedidos.ObterPorClienteAsync(id)).Any();
             if (temPedidos)
@@ -95,8 +111,15 @@ namespace LionttoMoveis.Controllers
             }
             else
             {
-                await _clientes.ExcluirAsync(id);
-                TempData["Sucesso"] = "Cliente removido.";
+                try
+                {
+                    await _clientes.ExcluirAsync(id);
+                    TempData["Sucesso"] = "Cliente removido.";
+                }
+                catch (DbUpdateException)
+                {
+                    TempData["Erro"] = "Nao e possivel excluir este cliente porque ele esta vinculado a outros registros.";
+                }
             }
 
             return RedirectToAction(nameof(Index));
@@ -110,10 +133,10 @@ namespace LionttoMoveis.Controllers
             cliente.Endereco = NormalizarOpcional(cliente.Endereco);
         }
 
-        private static string? NormalizarOpcional(string? texto)
+        private static string NormalizarOpcional(string? texto)
         {
             if (string.IsNullOrWhiteSpace(texto))
-                return null;
+                return string.Empty;
 
             return texto.Trim();
         }
