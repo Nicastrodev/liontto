@@ -50,7 +50,7 @@
                     <div class="form-group" style="grid-column:1/-1;margin-bottom:0;">
                         <label>Produto *</label>
                         <select name="ProdIds" class="prod-select" onchange="calcularTotal()">
-                            <option value="">Selecione o produto...</option>
+                            <option value="0">Selecione o produto...</option>
                             @foreach (var p in Model.Produtos)
                             {
                                 <option value="@p.Id" data-preco="@p.PrecoBase.ToString(System.Globalization.CultureInfo.InvariantCulture)">@p.Nome - @p.PrecoBase.ToString("C", ptBR)</option>
@@ -105,7 +105,7 @@ function adicionarProduto() {
             <div class="form-group" style="grid-column:1/-1;margin-bottom:0;">
                 <label>Produto *</label>
                 <select name="ProdIds" class="prod-select" onchange="calcularTotal()">
-                    <option value="">Selecione o produto...</option>${opts}
+                    <option value="0">Selecione o produto...</option>${opts}
                 </select>
             </div>
             <div class="form-group" style="margin-bottom:0;">
