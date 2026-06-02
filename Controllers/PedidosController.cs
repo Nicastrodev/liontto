@@ -7,6 +7,7 @@ using Microsoft.EntityFrameworkCore;
 using LionttoMoveis.Helpers;
 using LionttoMoveis.Models;
 using LionttoMoveis.Repository;
+using LionttoMoveis.Services;
 using LionttoMoveis.ViewModels;
 
 namespace LionttoMoveis.Controllers
@@ -16,12 +17,18 @@ namespace LionttoMoveis.Controllers
         private readonly PedidoRepository _pedidos;
         private readonly ClienteRepository _clientes;
         private readonly ProdutoRepository _produtos;
+        private readonly EstoqueService _estoqueService;
 
-        public PedidosController(PedidoRepository ped, ClienteRepository cli, ProdutoRepository prod)
+        public PedidosController(
+            PedidoRepository ped,
+            ClienteRepository cli,
+            ProdutoRepository prod,
+            EstoqueService estoqueService)
         {
             _pedidos = ped;
             _clientes = cli;
             _produtos = prod;
+            _estoqueService = estoqueService;
         }
 
         public async Task<IActionResult> Index(string? status)
@@ -77,11 +84,17 @@ namespace LionttoMoveis.Controllers
             pedido.RecalcularTotal();
             try
             {
-                await _pedidos.InserirComItensAsync(pedido);
+                var erroEstoque = await _estoqueService.RegistrarPedidoAsync(pedido);
+                if (erroEstoque is not null)
+                    return await RetornarNovoComErroAsync(vm, erroEstoque);
             }
             catch (DbUpdateException)
             {
                 return await RetornarNovoComErroAsync(vm, "Nao foi possivel salvar o pedido. Revise cliente, produtos e quantidades.");
+            }
+            catch
+            {
+                return await RetornarNovoComErroAsync(vm, "Nao foi possivel processar o pedido. Tente novamente.");
             }
 
             TempData["Sucesso"] = "Pedido criado com sucesso!";

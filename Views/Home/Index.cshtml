@@ -11,7 +11,7 @@
 
     var estoqueCritico = Model.EstoqueGrafico.Count(m => m.Quantidade <= m.QuantidadeMinima);
     var estoqueAtencao = Model.EstoqueGrafico.Count(m => m.Quantidade > m.QuantidadeMinima && m.Quantidade <= (m.QuantidadeMinima * 1.25));
-    var estoqueAdequado = Model.EstoqueGrafico.Count - estoqueCritico - estoqueAtencao;
+    var estoqueAdequado = Model.EstoqueGrafico.Count(m => m.Quantidade > (m.QuantidadeMinima * 1.25));
 }
 
 @section TopbarActions {
@@ -76,6 +76,25 @@
         grid-template-columns: repeat(auto-fit, minmax(145px, 1fr));
         gap: 8px;
         margin-top: 14px;
+    }
+
+    .chart-section + .chart-section {
+        margin-top: 18px;
+        padding-top: 18px;
+        border-top: 1px solid var(--border);
+    }
+
+    .chart-subtitle {
+        font-size: 12px;
+        font-weight: 700;
+        letter-spacing: .08em;
+        text-transform: uppercase;
+        color: var(--text-muted);
+        margin-bottom: 10px;
+    }
+
+    .chart-container-sm {
+        height: 220px;
     }
 
     .legend-chip {
@@ -184,12 +203,42 @@
 
     <div class="card">
         <div class="card-title">Nivel de Estoque</div>
-        <div class="chart-container"><canvas id="chartEstoque"></canvas></div>
-        <div class="chart-legend">
-            <div class="legend-chip"><span class="legend-dot ok"></span>Estoque adequado</div>
-            <div class="legend-chip"><span class="legend-dot warn"></span>Estoque em atencao</div>
-            <div class="legend-chip"><span class="legend-dot crit"></span>Abaixo do minimo</div>
-            <div class="legend-chip"><span class="legend-line"></span>Nivel minimo</div>
+        <div class="chart-section">
+            <div class="chart-subtitle">Acima do minimo</div>
+            @if (Model.EstoqueAcimaMinimo.Any())
+            {
+                <div class="chart-container chart-container-sm"><canvas id="chartEstoquePositivo"></canvas></div>
+                <div class="chart-legend">
+                    <div class="legend-chip"><span class="legend-dot ok"></span>Materiais acima do minimo</div>
+                    <div class="legend-chip"><span class="legend-line"></span>Nivel minimo</div>
+                </div>
+            }
+            else
+            {
+                <div class="empty-state" style="padding: 20px 10px;">
+                    <div class="icon"><i class="bi bi-graph-up" aria-hidden="true"></i></div>
+                    <p>Nenhum material acima do minimo.</p>
+                </div>
+            }
+        </div>
+
+        <div class="chart-section">
+            <div class="chart-subtitle">Abaixo do minimo</div>
+            @if (Model.EstoqueAbaixoMinimo.Any())
+            {
+                <div class="chart-container chart-container-sm"><canvas id="chartEstoqueCritico"></canvas></div>
+                <div class="chart-legend">
+                    <div class="legend-chip"><span class="legend-dot crit"></span>Materiais abaixo do minimo</div>
+                    <div class="legend-chip"><span class="legend-line"></span>Nivel minimo</div>
+                </div>
+            }
+            else
+            {
+                <div class="empty-state" style="padding: 20px 10px;">
+                    <div class="icon"><i class="bi bi-graph-down" aria-hidden="true"></i></div>
+                    <p>Nenhum material abaixo do minimo.</p>
+                </div>
+            }
         </div>
     </div>
 </div>
@@ -305,104 +354,115 @@ new Chart(document.getElementById('chartPedidos'), {
     }
 });
 
-const estoqueLabelsFull = @Html.Raw(JsonSerializer.Serialize(Model.EstoqueGrafico.Select(m => m.Nome).ToList()));
-const estoqueAtual = [@Html.Raw(string.Join(",", Model.EstoqueGrafico.Select(m => m.Quantidade.ToString(CultureInfo.InvariantCulture))))];
-const estoqueMinimo = [@Html.Raw(string.Join(",", Model.EstoqueGrafico.Select(m => m.QuantidadeMinima.ToString(CultureInfo.InvariantCulture))))];
+const estoqueAcimaMinimo = @Html.Raw(JsonSerializer.Serialize(
+    Model.EstoqueAcimaMinimo.Select(m => new {
+        nome = m.Nome,
+        quantidade = m.Quantidade,
+        minimo = m.QuantidadeMinima,
+        unidade = m.Unidade
+    }).ToList()
+));
 
-const estoqueLabels = estoqueLabelsFull.map(nome => nome.length > 16 ? `${nome.slice(0, 16)}...` : nome);
+const estoqueAbaixoMinimo = @Html.Raw(JsonSerializer.Serialize(
+    Model.EstoqueAbaixoMinimo.Select(m => new {
+        nome = m.Nome,
+        quantidade = m.Quantidade,
+        minimo = m.QuantidadeMinima,
+        unidade = m.Unidade
+    }).ToList()
+));
 
-const barColors = estoqueAtual.map((valor, i) => {
-    const minimo = estoqueMinimo[i];
+function renderEstoqueChart(canvasId, materiais, corBarra, descricaoSituacao) {
+    if (!materiais.length) return;
 
-    if (valor <= minimo) return '#dc2626';
-    if (valor <= (minimo * 1.25)) return '#f59e0b';
-    return '#2e8b57';
-});
+    const labelsFull = materiais.map(m => m.nome);
+    const labels = labelsFull.map(nome => nome.length > 16 ? `${nome.slice(0, 16)}...` : nome);
+    const estoqueAtual = materiais.map(m => m.quantidade);
+    const estoqueMinimo = materiais.map(m => m.minimo);
+    const unidade = materiais[0]?.unidade ?? '';
 
-new Chart(document.getElementById('chartEstoque'), {
-    type: 'bar',
-    data: {
-        labels: estoqueLabels,
-        datasets: [
-            {
-                label: 'Estoque atual',
-                data: estoqueAtual,
-                backgroundColor: barColors,
-                borderColor: barColors,
-                borderWidth: 1,
-                borderRadius: 10,
-                borderSkipped: false,
-                maxBarThickness: 42,
-                categoryPercentage: 0.72,
-                barPercentage: 0.95
+    new Chart(document.getElementById(canvasId), {
+        type: 'bar',
+        data: {
+            labels: labels,
+            datasets: [
+                {
+                    label: 'Estoque atual',
+                    data: estoqueAtual,
+                    backgroundColor: corBarra,
+                    borderColor: corBarra,
+                    borderWidth: 1,
+                    borderRadius: 10,
+                    borderSkipped: false,
+                    maxBarThickness: 42,
+                    categoryPercentage: 0.72,
+                    barPercentage: 0.95
+                },
+                {
+                    label: 'Nivel minimo',
+                    data: estoqueMinimo,
+                    type: 'line',
+                    borderColor: '#f97316',
+                    borderWidth: 2,
+                    borderDash: [7, 6],
+                    pointRadius: 0,
+                    tension: 0.25,
+                    fill: false
+                }
+            ]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            animation: { duration: 900, easing: 'easeOutQuart' },
+            plugins: {
+                legend: { display: false },
+                tooltip: {
+                    backgroundColor: '#0f172a',
+                    titleColor: '#f8fafc',
+                    bodyColor: '#e2e8f0',
+                    borderColor: '#1e293b',
+                    borderWidth: 1,
+                    callbacks: {
+                        title: function(items) {
+                            return labelsFull[items[0].dataIndex] || items[0].label;
+                        },
+                        label: function(ctx) {
+                            return `${ctx.dataset.label}: ${ctx.parsed.y} ${unidade}`.trim();
+                        },
+                        afterBody: function() {
+                            return `Situacao: ${descricaoSituacao}`;
+                        }
+                    }
+                }
             },
-            {
-                label: 'Nivel minimo',
-                data: estoqueMinimo,
-                type: 'line',
-                borderColor: '#f97316',
-                borderWidth: 2,
-                borderDash: [7, 6],
-                pointRadius: 0,
-                tension: 0.25,
-                fill: false
-            }
-        ]
-    },
-    options: {
-        responsive: true,
-        maintainAspectRatio: false,
-        animation: { duration: 900, easing: 'easeOutQuart' },
-        plugins: {
-            legend: { display: false },
-            tooltip: {
-                backgroundColor: '#0f172a',
-                titleColor: '#f8fafc',
-                bodyColor: '#e2e8f0',
-                borderColor: '#1e293b',
-                borderWidth: 1,
-                callbacks: {
-                    title: function(items) {
-                        return estoqueLabelsFull[items[0].dataIndex] || items[0].label;
-                    },
-                    label: function(ctx) {
-                        const unidade = '@(Model.EstoqueGrafico.FirstOrDefault()?.Unidade ?? "")';
-                        return `${ctx.dataset.label}: ${ctx.parsed.y} ${unidade}`.trim();
-                    },
-                    afterBody: function(items) {
-                        const i = items[0].dataIndex;
-                        const atual = estoqueAtual[i];
-                        const minimo = estoqueMinimo[i];
-                        if (atual <= minimo) return 'Situacao: abaixo do minimo';
-                        if (atual <= (minimo * 1.25)) return 'Situacao: atencao';
-                        return 'Situacao: adequado';
+            scales: {
+                x: {
+                    grid: { display: false },
+                    ticks: {
+                        color: '#475569',
+                        font: { family: 'DM Sans', size: 11, weight: 600 },
+                        maxRotation: 0,
+                        minRotation: 0,
+                        autoSkip: false
+                    }
+                },
+                y: {
+                    beginAtZero: true,
+                    grid: { color: 'rgba(148, 163, 184, .2)' },
+                    ticks: {
+                        color: '#64748b',
+                        font: { family: 'DM Sans', size: 11 },
+                        precision: 0
                     }
                 }
             }
-        },
-        scales: {
-            x: {
-                grid: { display: false },
-                ticks: {
-                    color: '#475569',
-                    font: { family: 'DM Sans', size: 11, weight: 600 },
-                    maxRotation: 0,
-                    minRotation: 0,
-                    autoSkip: false
-                }
-            },
-            y: {
-                beginAtZero: true,
-                grid: { color: 'rgba(148, 163, 184, .2)' },
-                ticks: {
-                    color: '#64748b',
-                    font: { family: 'DM Sans', size: 11 },
-                    precision: 0
-                }
-            }
         }
-    }
-});
+    });
+}
+
+renderEstoqueChart('chartEstoquePositivo', estoqueAcimaMinimo, '#2e8b57', 'acima do minimo');
+renderEstoqueChart('chartEstoqueCritico', estoqueAbaixoMinimo, '#dc2626', 'abaixo do minimo');
 </script>
 }
 
