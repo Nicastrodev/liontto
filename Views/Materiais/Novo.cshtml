@@ -26,18 +26,18 @@
             </div>
             <div class="form-group">
                 <label asp-for="Quantidade">Quantidade Inicial</label>
-                <input asp-for="Quantidade" min="0" step="0.01"/>
+                <input asp-for="Quantidade" type="text" inputmode="decimal" placeholder="Ex: 10 ou 10,5"/>
                 <span asp-validation-for="Quantidade"></span>
             </div>
             <div class="form-group">
                 <label asp-for="QuantidadeMinima">Quantidade Minima (Alerta)</label>
-                <input asp-for="QuantidadeMinima" min="0" step="0.01"/>
+                <input asp-for="QuantidadeMinima" type="text" inputmode="decimal" placeholder="Ex: 5 ou 5,5"/>
                 <span class="form-hint">Alerta quando o estoque cair abaixo deste valor.</span>
                 <span asp-validation-for="QuantidadeMinima"></span>
             </div>
             <div class="form-group">
                 <label asp-for="PrecoUnitario">Preco Unitario (R$)</label>
-                <input asp-for="PrecoUnitario" min="0" step="0.01"/>
+                <input asp-for="PrecoUnitario" type="text" inputmode="decimal" placeholder="Ex: R$ 18,50 ou 2.300,00"/>
                 <span asp-validation-for="PrecoUnitario"></span>
             </div>
         </div>

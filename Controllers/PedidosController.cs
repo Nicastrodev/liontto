@@ -69,13 +69,20 @@ namespace LionttoMoveis.Controllers
             {
                 ClienteId = vm.ClienteId,
                 ClienteNome = cliente.Nome.Trim(),
-                Observacoes = vm.Observacoes,
+                Observacoes = vm.Observacoes ?? string.Empty,
                 DataEntregaPrevista = dataEntregaPrevista,
                 Itens = itens
             };
 
             pedido.RecalcularTotal();
-            await _pedidos.InserirComItensAsync(pedido);
+            try
+            {
+                await _pedidos.InserirComItensAsync(pedido);
+            }
+            catch (DbUpdateException)
+            {
+                return await RetornarNovoComErroAsync(vm, "Nao foi possivel salvar o pedido. Revise cliente, produtos e quantidades.");
+            }
 
             TempData["Sucesso"] = "Pedido criado com sucesso!";
             return RedirectToAction(nameof(Ver), new { id = pedido.Id });
@@ -90,9 +97,9 @@ namespace LionttoMoveis.Controllers
 
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> AtualizarStatus(int id, string acao, byte[] rowVersion)
+        public async Task<IActionResult> AtualizarStatus(int id, string acao)
         {
-            var pedido = await _pedidos.ObterPorIdAsync(id);
+            var pedido = await _pedidos.ObterComItensAsync(id);
             if (pedido is null) return NotFound();
 
             if (acao == "avancar")
@@ -100,34 +107,41 @@ namespace LionttoMoveis.Controllers
             else if (acao == "voltar" && pedido.Status != StatusPedido.Aguardando)
                 pedido.Status = (StatusPedido)((int)pedido.Status - 1);
 
-            try
-            {
-                var atualizado = await _pedidos.AtualizarStatusAsync(pedido.Id, pedido.Status, pedido.DataEntregaReal, rowVersion);
-                if (!atualizado) return NotFound();
-            }
-            catch (DbUpdateConcurrencyException)
-            {
-                TempData["Erro"] = "Este pedido foi atualizado por outro usuario. Recarregue a pagina e tente novamente.";
-                return RedirectToAction(nameof(Ver), new { id });
-            }
-
+            await _pedidos.AtualizarStatusAsync(pedido);
             TempData["Sucesso"] = $"Status atualizado: {pedido.StatusLabel}";
             return RedirectToAction(nameof(Ver), new { id });
         }
 
-        [HttpPost]
-        [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Excluir(int id)
+        [HttpGet]
+        [ActionName("Excluir")]
+        public IActionResult ExcluirGet(int id)
         {
-            var pedido = await _pedidos.ObterPorIdAsync(id);
+            TempData["Erro"] = "Use o botao de excluir na listagem para remover um pedido com seguranca.";
+            return RedirectToAction(nameof(Index));
+        }
+
+        [HttpPost]
+        [ActionName("Excluir")]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> ExcluirPost(int id)
+        {
+            var pedido = await _pedidos.ObterComItensAsync(id);
             if (pedido?.Status == StatusPedido.Entregue)
             {
                 TempData["Erro"] = "Nao e possivel excluir pedido ja entregue.";
                 return RedirectToAction(nameof(Ver), new { id });
             }
 
-            await _pedidos.ExcluirAsync(id);
-            TempData["Sucesso"] = "Pedido removido.";
+            try
+            {
+                await _pedidos.ExcluirAsync(id);
+                TempData["Sucesso"] = "Pedido removido.";
+            }
+            catch (DbUpdateException)
+            {
+                TempData["Erro"] = "Nao e possivel excluir este pedido porque ele esta vinculado a outros registros.";
+            }
+
             return RedirectToAction(nameof(Index));
         }
 
@@ -196,10 +210,10 @@ namespace LionttoMoveis.Controllers
         private string? ObterPrimeiroErroModelState()
             => ModelStateErrorHelper.ObterPrimeiroErroAmigavel(ModelState);
 
-        private static string? NormalizarOpcional(string? texto)
+        private static string NormalizarOpcional(string? texto)
         {
             if (string.IsNullOrWhiteSpace(texto))
-                return null;
+                return string.Empty;
 
             return texto.Trim();
         }

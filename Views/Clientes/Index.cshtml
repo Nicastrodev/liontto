@@ -1,30 +1,48 @@
-@* Views/Clientes/Index.cshtml *@
 @model List<Cliente>
 @{ ViewData["Title"] = "Clientes"; }
 
-@section TopbarActions { <a href="/Clientes/Novo" class="btn btn-accent">➕ Novo Cliente</a> }
+@section TopbarActions {
+    <a href="/Clientes/Novo" class="btn btn-accent">
+        <i class="bi bi-plus-circle" aria-hidden="true"></i>
+        Novo Cliente
+    </a>
+}
 
 @if (Model.Any())
 {
     <div class="card">
         <div class="table-wrapper">
-            <table>
-                <thead><tr><th>Nome</th><th>Telefone</th><th>E-mail</th><th>Endereço</th><th>Ações</th></tr></thead>
+            <table class="responsive-table">
+                <thead>
+                    <tr>
+                        <th>Nome</th>
+                        <th>Telefone</th>
+                        <th>E-mail</th>
+                        <th>Endereco</th>
+                        <th>Acoes</th>
+                    </tr>
+                </thead>
                 <tbody>
                     @foreach (var c in Model)
                     {
                         <tr>
-                            <td class="fw-600">@c.Nome</td>
-                            <td>@(string.IsNullOrEmpty(c.Telefone) ? "—" : c.Telefone)</td>
-                            <td class="text-muted">@(string.IsNullOrEmpty(c.Email) ? "—" : c.Email)</td>
-                            <td class="text-muted" style="font-size:13px;">@(string.IsNullOrEmpty(c.Endereco) ? "—" : c.Endereco)</td>
-                            <td>
-                                <div class="flex gap-2">
-                                    <a href="/Clientes/Editar/@c.Id" class="btn btn-outline btn-sm">✏️ Editar</a>
+                            <td class="fw-600" data-label="Nome">@c.Nome</td>
+                            <td data-label="Telefone">@(string.IsNullOrEmpty(c.Telefone) ? "-" : c.Telefone)</td>
+                            <td class="text-muted" data-label="E-mail">@(string.IsNullOrEmpty(c.Email) ? "-" : c.Email)</td>
+                            <td class="text-muted" data-label="Endereco">@(string.IsNullOrEmpty(c.Endereco) ? "-" : c.Endereco)</td>
+                            <td class="cell-actions" data-label="Acoes">
+                                <div class="row-actions">
+                                    <a href="/Clientes/Editar/@c.Id" class="btn btn-outline btn-sm">
+                                        <i class="bi bi-pencil" aria-hidden="true"></i>
+                                        Editar
+                                    </a>
                                     <form method="post" action="/Clientes/Excluir/@c.Id"
                                           data-confirm="Remover o cliente '@c.Nome'?">
                                         @Html.AntiForgeryToken()
-                                        <button type="submit" class="btn btn-danger btn-sm">🗑</button>
+                                        <button type="submit" class="btn btn-danger btn-sm">
+                                            <i class="bi bi-trash" aria-hidden="true"></i>
+                                            Excluir
+                                        </button>
                                     </form>
                                 </div>
                             </td>
@@ -39,7 +57,8 @@ else
 {
     <div class="card">
         <div class="empty-state">
-            <div class="icon">👥</div><h3>Nenhum cliente cadastrado</h3>
+            <div class="icon"><i class="bi bi-people" aria-hidden="true"></i></div>
+            <h3>Nenhum cliente cadastrado</h3>
             <a href="/Clientes/Novo" class="btn btn-primary mt-3">Cadastrar Cliente</a>
         </div>
     </div>

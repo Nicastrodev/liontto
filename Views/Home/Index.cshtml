@@ -39,7 +39,7 @@
 
     .dashboard-kpis {
         display: grid;
-        grid-template-columns: repeat(auto-fit, minmax(170px, 1fr));
+        grid-template-columns: repeat(2, 1fr);
         gap: 12px;
         margin-bottom: 22px;
     }
@@ -48,19 +48,22 @@
         background: #fff;
         border: 1px solid var(--border);
         border-radius: 12px;
-        padding: 12px 14px;
+        padding: 14px 12px;
+        min-width: 0;
     }
 
     .kpi-label {
-        font-size: 12px;
+        font-size: 11px;
         color: #64748b;
-        margin-bottom: 5px;
+        margin-bottom: 6px;
+        font-weight: 500;
     }
 
     .kpi-value {
-        font-size: 22px;
+        font-size: 24px;
         font-weight: 700;
         color: #0f172a;
+        line-height: 1.2;
     }
 
     .charts-grid .card {
@@ -105,15 +108,20 @@
     }
 
     @@media (max-width: 768px) {
-        .dashboard-kpis {
-            grid-template-columns: 1fr 1fr;
-        }
+        .kpi { padding: 12px 10px; }
+        .kpi-label { font-size: 10px; }
+        .kpi-value { font-size: 20px; }
+        .chart-legend { grid-template-columns: 1fr; gap: 6px; }
+        .legend-chip { font-size: 11px; padding: 6px 8px; }
     }
 
-    @@media (max-width: 520px) {
-        .dashboard-kpis {
-            grid-template-columns: 1fr;
-        }
+    @@media (max-width: 560px) {
+        .dashboard-kpis { gap: 8px; margin-bottom: 16px; }
+        .kpi { padding: 10px 8px; }
+        .kpi-label { font-size: 9px; margin-bottom: 4px; }
+        .kpi-value { font-size: 18px; }
+        .chart-legend { gap: 4px; }
+        .legend-chip { font-size: 10px; padding: 5px 6px; }
     }
 </style>
 
@@ -147,9 +155,7 @@
     </div>
 </div>
 
-<div class="dashboard-note">
-    <p>As barras do grafico de estoque seguem esta regra: verde = adequado, laranja = atencao, vermelho = abaixo do minimo. A linha tracejada indica o estoque minimo configurado para cada material.</p>
-</div>
+
 
 <div class="dashboard-kpis">
     <div class="kpi">
@@ -197,16 +203,16 @@
         @if (Model.UltimosPedidos.Any())
         {
             <div class="table-wrapper">
-                <table>
+                <table class="responsive-table">
                     <thead><tr><th>#</th><th>Cliente</th><th>Status</th><th>Valor</th></tr></thead>
                     <tbody>
                         @foreach (var p in Model.UltimosPedidos)
                         {
                             <tr>
-                                <td><a href="/Pedidos/Ver/@p.Id" style="color:var(--accent);font-weight:700;">#@p.Id</a></td>
-                                <td>@p.ClienteNome</td>
-                                <td><span class="badge @p.StatusCssClass">@p.StatusLabel</span></td>
-                                <td class="fw-600">@p.ValorTotal.ToString("C", new CultureInfo("pt-BR"))</td>
+                                <td data-label="Pedido"><a href="/Pedidos/Ver/@p.Id" style="color:var(--accent);font-weight:700;">#@p.Id</a></td>
+                                <td data-label="Cliente">@p.ClienteNome</td>
+                                <td data-label="Status"><span class="badge @p.StatusCssClass">@p.StatusLabel</span></td>
+                                <td class="fw-600" data-label="Valor">@p.ValorTotal.ToString("C", new CultureInfo("pt-BR"))</td>
                             </tr>
                         }
                     </tbody>
@@ -227,15 +233,15 @@
         @if (Model.AlertasEstoque.Any())
         {
             <div class="table-wrapper">
-                <table>
+                <table class="responsive-table">
                     <thead><tr><th>Material</th><th>Atual</th><th>Minimo</th></tr></thead>
                     <tbody>
                         @foreach (var m in Model.AlertasEstoque)
                         {
                             <tr>
-                                <td class="fw-600">@m.Nome</td>
-                                <td><span class="badge badge-danger">@m.Quantidade @m.Unidade</span></td>
-                                <td class="text-muted">@m.QuantidadeMinima @m.Unidade</td>
+                                <td class="fw-600" data-label="Material">@m.Nome</td>
+                                <td data-label="Atual"><span class="badge badge-danger">@m.Quantidade @m.Unidade</span></td>
+                                <td class="text-muted" data-label="Minimo">@m.QuantidadeMinima @m.Unidade</td>
                             </tr>
                         }
                     </tbody>

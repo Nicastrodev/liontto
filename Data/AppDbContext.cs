@@ -26,14 +26,12 @@ namespace LionttoMoveis.Data
         public override int SaveChanges()
         {
             ValidarEntidadesRastreadas();
-            AtualizarTokensConcorrencia();
             return base.SaveChanges();
         }
 
         public override Task<int> SaveChangesAsync(CancellationToken cancellationToken = default)
         {
             ValidarEntidadesRastreadas();
-            AtualizarTokensConcorrencia();
             return base.SaveChangesAsync(cancellationToken);
         }
 
@@ -161,30 +159,6 @@ namespace LionttoMoveis.Data
                 });
                 e.Property(m => m.Tipo).HasConversion<int>();
             });
-
-            ConfigurarConcorrencia(modelBuilder);
-        }
-
-        private static void ConfigurarConcorrencia(ModelBuilder modelBuilder)
-        {
-            var entidadesBase = new[]
-            {
-                typeof(Material),
-                typeof(Cliente),
-                typeof(Produto),
-                typeof(Pedido),
-                typeof(Movimentacao)
-            };
-
-            foreach (var tipo in entidadesBase)
-            {
-                modelBuilder.Entity(tipo)
-                    .Property<byte[]>(nameof(EntidadeBase.RowVersion))
-                    .HasColumnName("row_version")
-                    .HasColumnType("binary(16)")
-                    .IsRequired()
-                    .IsConcurrencyToken();
-            }
         }
 
         private void ValidarEntidadesRastreadas()
@@ -229,26 +203,8 @@ namespace LionttoMoveis.Data
                 if (propriedade.CurrentValue is string texto)
                 {
                     var textoNormalizado = texto.Trim();
-
-                    if (string.IsNullOrWhiteSpace(textoNormalizado) && propriedade.Metadata.IsNullable)
-                    {
-                        propriedade.CurrentValue = null;
-                        continue;
-                    }
-
                     propriedade.CurrentValue = textoNormalizado;
                 }
-            }
-        }
-
-        private void AtualizarTokensConcorrencia()
-        {
-            foreach (var entrada in ChangeTracker.Entries<EntidadeBase>())
-            {
-                if (entrada.State != EntityState.Added && entrada.State != EntityState.Modified)
-                    continue;
-
-                entrada.Property(e => e.RowVersion).CurrentValue = Guid.NewGuid().ToByteArray();
             }
         }
     }

@@ -53,7 +53,7 @@
                             <option value="">Selecione o produto...</option>
                             @foreach (var p in Model.Produtos)
                             {
-                                <option value="@p.Id" data-preco="@p.PrecoBase">@p.Nome - @p.PrecoBase.ToString("C", ptBR)</option>
+                                <option value="@p.Id" data-preco="@p.PrecoBase.ToString(System.Globalization.CultureInfo.InvariantCulture)">@p.Nome - @p.PrecoBase.ToString("C", ptBR)</option>
                             }
                         </select>
                     </div>
@@ -73,7 +73,7 @@
 
         <div id="options-source" style="display:none;">
             @foreach (var p in Model.Produtos)
-            {<option value="@p.Id" data-preco="@p.PrecoBase">@p.Nome - @p.PrecoBase.ToString("C", ptBR)</option>}
+            {<option value="@p.Id" data-preco="@p.PrecoBase.ToString(System.Globalization.CultureInfo.InvariantCulture)">@p.Nome - @p.PrecoBase.ToString("C", ptBR)</option>}
         </div>
 
         <button type="button" onclick="adicionarProduto()" class="btn btn-outline btn-sm mb-4">Adicionar Produto</button>

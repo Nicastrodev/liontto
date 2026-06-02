@@ -1,19 +1,23 @@
-@* Views/Pedidos/Index.cshtml *@
 @model List<Pedido>
 @{ ViewData["Title"] = "Pedidos"; }
 
-@section TopbarActions { <a href="/Pedidos/Novo" class="btn btn-accent">➕ Novo Pedido</a> }
+@section TopbarActions {
+    <a href="/Pedidos/Novo" class="btn btn-accent">
+        <i class="bi bi-plus-circle" aria-hidden="true"></i>
+        Novo Pedido
+    </a>
+}
 
 @{
     var statusFiltro = ViewBag.StatusFiltro as string;
     var statusOpcoes = new[] {
-        ("Aguardando","⏳ Aguardando"), ("EmProducao","🔨 Em Produção"),
-        ("Pronto","✅ Pronto"), ("Entregue","📦 Entregue")
+        ("Aguardando","Aguardando"), ("EmProducao","Em Producao"),
+        ("Pronto","Pronto"), ("Entregue","Entregue")
     };
     var ptBR = new System.Globalization.CultureInfo("pt-BR");
 }
 
-<div class="flex gap-2 mb-4" style="flex-wrap:wrap;">
+<div class="filter-bar mb-4">
     <a href="/Pedidos" class="btn btn-sm @(string.IsNullOrEmpty(statusFiltro) ? "btn-primary" : "btn-outline")">Todos</a>
     @foreach (var (val, label) in statusOpcoes)
     {
@@ -25,29 +29,45 @@
 {
     <div class="card">
         <div class="table-wrapper">
-            <table>
+            <table class="responsive-table">
                 <thead>
-                    <tr><th>#</th><th>Cliente</th><th>Status</th><th>Valor Total</th><th>Data</th><th>Entrega Prev.</th><th>Ações</th></tr>
+                    <tr>
+                        <th>#</th>
+                        <th>Cliente</th>
+                        <th>Status</th>
+                        <th>Itens</th>
+                        <th>Valor Total</th>
+                        <th>Data</th>
+                        <th>Entrega Prev.</th>
+                        <th>Acoes</th>
+                    </tr>
                 </thead>
                 <tbody>
                     @foreach (var p in Model)
                     {
                         <tr>
-                            <td><a href="/Pedidos/Ver/@p.Id" style="color:var(--accent);font-weight:700;">#@p.Id</a></td>
-                            <td class="fw-600">@p.ClienteNome</td>
-                            <td><span class="badge @p.StatusCssClass">@p.StatusLabel</span></td>
-                            <td class="fw-600">@p.ValorTotal.ToString("C", ptBR)</td>
-                            <td class="text-muted">@p.DataPedido.ToString("dd/MM/yyyy")</td>
-                            <td class="text-muted">@(p.DataEntregaPrevista?.ToString("dd/MM/yyyy") ?? "—")</td>
-                            <td>
-                                <div class="flex gap-2">
-                                    <a href="/Pedidos/Ver/@p.Id" class="btn btn-outline btn-sm">👁 Ver</a>
+                            <td data-label="Pedido"><a href="/Pedidos/Ver/@p.Id" style="color:var(--accent);font-weight:700;">#@p.Id</a></td>
+                            <td class="fw-600" data-label="Cliente">@p.ClienteNome</td>
+                            <td data-label="Status"><span class="badge @p.StatusCssClass">@p.StatusLabel</span></td>
+                            <td data-label="Itens"><span class="badge badge-secondary">@p.Itens.Count item(ns)</span></td>
+                            <td class="fw-600" data-label="Valor">@p.ValorTotal.ToString("C", ptBR)</td>
+                            <td class="text-muted" data-label="Data">@p.DataPedido.ToString("dd/MM/yyyy")</td>
+                            <td class="text-muted" data-label="Entrega">@(p.DataEntregaPrevista?.ToString("dd/MM/yyyy") ?? "-")</td>
+                            <td class="cell-actions" data-label="Acoes">
+                                <div class="row-actions">
+                                    <a href="/Pedidos/Ver/@p.Id" class="btn btn-outline btn-sm">
+                                        <i class="bi bi-eye" aria-hidden="true"></i>
+                                        Ver
+                                    </a>
                                     @if (p.Status != StatusPedido.Entregue)
                                     {
                                         <form method="post" action="/Pedidos/Excluir/@p.Id"
                                               data-confirm="Remover o pedido #@p.Id?">
                                             @Html.AntiForgeryToken()
-                                            <button type="submit" class="btn btn-danger btn-sm">🗑</button>
+                                            <button type="submit" class="btn btn-danger btn-sm">
+                                                <i class="bi bi-trash" aria-hidden="true"></i>
+                                                Excluir
+                                            </button>
                                         </form>
                                     }
                                 </div>
@@ -63,7 +83,8 @@ else
 {
     <div class="card">
         <div class="empty-state">
-            <div class="icon">📋</div><h3>Nenhum pedido encontrado</h3>
+            <div class="icon"><i class="bi bi-receipt" aria-hidden="true"></i></div>
+            <h3>Nenhum pedido encontrado</h3>
             <a href="/Pedidos/Novo" class="btn btn-primary mt-3">Criar Pedido</a>
         </div>
     </div>

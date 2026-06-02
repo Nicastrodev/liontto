@@ -8,7 +8,6 @@
         <div asp-validation-summary="ModelOnly"></div>
 
         <input type="hidden" name="CriadoEm" value="@Model.Produto.CriadoEm.ToString("o")"/>
-        <input type="hidden" name="RowVersion" value="@Convert.ToBase64String(Model.Produto.RowVersion ?? Array.Empty<byte>())"/>
 
         <div class="form-grid">
             <div class="form-group" style="grid-column:1/-1;">
@@ -24,7 +23,7 @@
             </div>
             <div class="form-group">
                 <label>Preco Base (R$) *</label>
-                <input type="number" name="PrecoBase" value="@Model.Produto.PrecoBase" min="0" step="0.01"/>
+                <input type="text" inputmode="decimal" name="PrecoBase" value="@Model.Produto.PrecoBase.ToString("N2", new System.Globalization.CultureInfo("pt-BR"))" placeholder="Ex: R$ 18,50 ou 2.300,00"/>
                 @Html.ValidationMessage("PrecoBase", null, new { @class = "field-validation-error" })
             </div>
             <div class="form-group">
@@ -62,7 +61,7 @@
                                 }
                             }
                         </select>
-                        <input type="number" name="matQtds" value="@mat.QuantidadeNecessaria" min="0.01" step="0.01" style="flex:1;"/>
+                        <input type="text" inputmode="decimal" name="matQtds" value="@mat.QuantidadeNecessaria.ToString("N2", new System.Globalization.CultureInfo("pt-BR"))" placeholder="Quantidade" style="flex:1;"/>
                         <button type="button" onclick="this.parentElement.remove()" class="btn btn-danger btn-sm">Remover</button>
                     </div>
                 }
@@ -77,7 +76,7 @@
                             <option value="@m.Id">@m.Nome (@m.Unidade)</option>
                         }
                     </select>
-                    <input type="number" name="matQtds" placeholder="Quantidade" min="0.01" step="0.01" style="flex:1;"/>
+                    <input type="text" inputmode="decimal" name="matQtds" placeholder="Quantidade" style="flex:1;"/>
                     <button type="button" onclick="this.parentElement.remove()" class="btn btn-danger btn-sm">Remover</button>
                 </div>
             }
@@ -111,7 +110,7 @@ function adicionarLinha() {
         <select name="matIds" style="flex:2;">
             <option value="">Selecione o material...</option>${options}
         </select>
-        <input type="number" name="matQtds" placeholder="Quantidade" min="0.01" step="0.01" style="flex:1;"/>
+        <input type="text" inputmode="decimal" name="matQtds" placeholder="Quantidade" style="flex:1;"/>
         <button type="button" onclick="this.parentElement.remove()" class="btn btn-danger btn-sm">Remover</button>`;
     document.getElementById('materiais-lista').appendChild(row);
 }

@@ -44,11 +44,6 @@ namespace LionttoMoveis.Migrations
                         .HasColumnType("varchar(150)")
                         .HasColumnName("nome");
 
-                    b.Property<byte[]>("RowVersion")
-                        .IsConcurrencyToken()
-                        .HasColumnType("binary(16)")
-                        .HasColumnName("row_version");
-
                     b.Property<string>("Telefone")
                         .HasMaxLength(30)
                         .HasColumnType("varchar(30)")
@@ -133,11 +128,6 @@ namespace LionttoMoveis.Migrations
                     b.Property<double>("QuantidadeMinima")
                         .HasColumnType("double")
                         .HasColumnName("quantidade_minima");
-
-                    b.Property<byte[]>("RowVersion")
-                        .IsConcurrencyToken()
-                        .HasColumnType("binary(16)")
-                        .HasColumnName("row_version");
 
                     b.Property<string>("Unidade")
                         .IsRequired()
@@ -231,11 +221,6 @@ namespace LionttoMoveis.Migrations
                         .HasColumnType("double")
                         .HasColumnName("quantidade");
 
-                    b.Property<byte[]>("RowVersion")
-                        .IsConcurrencyToken()
-                        .HasColumnType("binary(16)")
-                        .HasColumnName("row_version");
-
                     b.Property<int>("Tipo")
                         .HasColumnType("int")
                         .HasColumnName("tipo");
@@ -286,11 +271,6 @@ namespace LionttoMoveis.Migrations
                         .HasColumnType("varchar(500)")
                         .HasColumnName("observacoes");
 
-                    b.Property<byte[]>("RowVersion")
-                        .IsConcurrencyToken()
-                        .HasColumnType("binary(16)")
-                        .HasColumnName("row_version");
-
                     b.Property<int>("Status")
                         .HasColumnType("int")
                         .HasColumnName("status");
@@ -332,11 +312,6 @@ namespace LionttoMoveis.Migrations
                     b.Property<decimal>("PrecoBase")
                         .HasColumnType("decimal(10,2)")
                         .HasColumnName("preco_base");
-
-                    b.Property<byte[]>("RowVersion")
-                        .IsConcurrencyToken()
-                        .HasColumnType("binary(16)")
-                        .HasColumnName("row_version");
 
                     b.Property<int>("TempoProducaoDias")
                         .HasColumnType("int")
@@ -433,4 +408,3 @@ namespace LionttoMoveis.Migrations
         }
     }
 }
-

@@ -34,7 +34,6 @@
         </div>
 
         <input type="hidden" name="CriadoEm" value="@Model.CriadoEm.ToString("o")"/>
-        <input type="hidden" name="RowVersion" value="@Convert.ToBase64String(Model.RowVersion ?? Array.Empty<byte>())"/>
         <div class="divider"></div>
         <div class="flex gap-2">
             <button type="submit" class="btn btn-primary">Salvar</button>
