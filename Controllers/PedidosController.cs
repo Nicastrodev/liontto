@@ -7,7 +7,6 @@ using Microsoft.EntityFrameworkCore;
 using LionttoMoveis.Helpers;
 using LionttoMoveis.Models;
 using LionttoMoveis.Repository;
-using LionttoMoveis.Services;
 using LionttoMoveis.ViewModels;
 
 namespace LionttoMoveis.Controllers
@@ -17,18 +16,15 @@ namespace LionttoMoveis.Controllers
         private readonly PedidoRepository _pedidos;
         private readonly ClienteRepository _clientes;
         private readonly ProdutoRepository _produtos;
-        private readonly EstoqueService _estoqueService;
 
         public PedidosController(
             PedidoRepository ped,
             ClienteRepository cli,
-            ProdutoRepository prod,
-            EstoqueService estoqueService)
+            ProdutoRepository prod)
         {
             _pedidos = ped;
             _clientes = cli;
             _produtos = prod;
-            _estoqueService = estoqueService;
         }
 
         public async Task<IActionResult> Index(string? status)
@@ -84,17 +80,11 @@ namespace LionttoMoveis.Controllers
             pedido.RecalcularTotal();
             try
             {
-                var erroEstoque = await _estoqueService.RegistrarPedidoAsync(pedido);
-                if (erroEstoque is not null)
-                    return await RetornarNovoComErroAsync(vm, erroEstoque);
+                await _pedidos.InserirComItensAsync(pedido);
             }
             catch (DbUpdateException)
             {
                 return await RetornarNovoComErroAsync(vm, "Nao foi possivel salvar o pedido. Revise cliente, produtos e quantidades.");
-            }
-            catch
-            {
-                return await RetornarNovoComErroAsync(vm, "Nao foi possivel processar o pedido. Tente novamente.");
             }
 
             TempData["Sucesso"] = "Pedido criado com sucesso!";
@@ -161,29 +151,14 @@ namespace LionttoMoveis.Controllers
         private async Task<(List<ItemDoPedido> itens, string? erro)> MontarItensDoPedidoAsync(NovoPedidoViewModel vm)
         {
             var itens = new List<ItemDoPedido>();
-            var prodIds = vm.ProdIds.Count > 0 ? vm.ProdIds : LerIntsDoFormulario("ProdIds");
-            var prodQtds = vm.ProdQtds.Count > 0 ? vm.ProdQtds : LerIntsDoFormulario("ProdQtds");
-            var prodPers = vm.ProdPers.Count > 0 ? vm.ProdPers : LerStringsDoFormulario("ProdPers");
 
-            var totalLinhas = new[] { prodIds.Count, prodQtds.Count, prodPers.Count }.Max();
-
-            if (totalLinhas == 0)
-                return (itens, "Adicione pelo menos um produto valido ao pedido.");
-
-            for (int i = 0; i < totalLinhas; i++)
+            for (int i = 0; i < vm.ProdIds.Count; i++)
             {
-                var produtoId = i < prodIds.Count ? prodIds[i] : 0;
-                var quantidade = i < prodQtds.Count ? prodQtds[i] : 0;
-                var personalizacao = i < prodPers.Count ? (prodPers[i] ?? string.Empty).Trim() : string.Empty;
-
+                var produtoId = vm.ProdIds[i];
                 if (produtoId <= 0)
-                {
-                    if (quantidade > 0 || !string.IsNullOrWhiteSpace(personalizacao))
-                        return (itens, "Selecione um produto valido em todas as linhas adicionadas.");
-
                     continue;
-                }
 
+                var quantidade = i < vm.ProdQtds.Count ? vm.ProdQtds[i] : 0;
                 if (quantidade <= 0)
                     return (itens, "Digite uma quantidade valida para todos os produtos selecionados.");
 
@@ -191,6 +166,7 @@ namespace LionttoMoveis.Controllers
                 if (prod is null || string.IsNullOrWhiteSpace(prod.Nome))
                     return (itens, "Um dos produtos selecionados nao existe mais.");
 
+                var personalizacao = i < vm.ProdPers.Count ? (vm.ProdPers[i] ?? string.Empty).Trim() : string.Empty;
                 var personalizacaoNormalizada = NormalizarOpcional(personalizacao);
 
                 itens.Add(new ItemDoPedido
@@ -243,26 +219,6 @@ namespace LionttoMoveis.Controllers
                 return string.Empty;
 
             return texto.Trim();
-        }
-
-        private List<int> LerIntsDoFormulario(string chave)
-        {
-            if (!Request.HasFormContentType)
-                return new List<int>();
-
-            return Request.Form[chave]
-                .Select(valor => int.TryParse(valor, out var numero) ? numero : 0)
-                .ToList();
-        }
-
-        private List<string?> LerStringsDoFormulario(string chave)
-        {
-            if (!Request.HasFormContentType)
-                return new List<string?>();
-
-            return Request.Form[chave]
-                .Select(valor => (string?)(string.IsNullOrWhiteSpace(valor) ? string.Empty : valor.Trim()))
-                .ToList();
         }
     }
 }
