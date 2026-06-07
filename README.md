@@ -1,214 +1,167 @@
-﻿# ðŸª‘ LÃ­ontto MÃ³veis â€” ASP.NET Core + MySQL (XAMPP)
+# 🪑 Líontto Móveis
 
-Sistema de gestÃ£o de materiais, produtos, clientes e pedidos.
-VersÃ£o migrada de **MongoDB â†’ MySQL** usando **Entity Framework Core + Pomelo**.
+Sistema web de gestão para marcenaria e móveis planejados desenvolvido com **ASP.NET Core MVC**, **Entity Framework Core** e **MySQL**.
 
----
+> Projeto acadêmico desenvolvido durante o 3º semestre de Análise e Desenvolvimento de Sistemas, com foco em arquitetura de software, persistência de dados, controle de estoque e desenvolvimento full stack utilizando ASP.NET Core MVC e MySQL.
 
-## Deploy Railway (Frontend + Backend no mesmo servico)
-
-Este projeto usa ASP.NET Core MVC (Views Razor + `wwwroot`), entao o frontend e o backend rodam no mesmo processo e no mesmo dominio.
-
-### 1) Variaveis obrigatorias na Railway
-
-Defina no servico Web:
-
-- `ASPNETCORE_ENVIRONMENT=Production`
-- `MYSQL_URL` **ou** `MYSQL_PUBLIC_URL` (recomendado usar o valor que a propria Railway fornece para o MySQL)
-
-Opcionalmente, em vez de URL unica, voce pode usar:
-
-- `MYSQLHOST`
-- `MYSQLPORT`
-- `MYSQLUSER`
-- `MYSQLPASSWORD`
-- `MYSQLDATABASE` (ou `MYSQL_DATABASE`)
-
-Variaveis opcionais de bootstrap:
-
-- `DB_INIT_ON_STARTUP=true` (padrao)
-- `APPLY_MIGRATIONS_ON_STARTUP=false` (padrao; mantenha falso se as tabelas ja existem)
-- `CREATE_SCHEMA_ON_STARTUP=false` (padrao; use `true` apenas para banco vazio em ambiente controlado)
-- `SEED_ON_STARTUP=false`
-- `DB_FAIL_FAST_ON_INIT_ERROR=true` (recomendado para nao subir com frontend quebrado por schema ausente)
-
-### 2) Prioridade de conexao ao banco
-
-1. `ConnectionStrings__MySQL`
-2. `DB_CONNECTION`
-3. `MYSQL_URL`
-4. `MYSQL_PUBLIC_URL`
-5. `MYSQLHOST` + `MYSQLPORT` + `MYSQLUSER` + `MYSQLPASSWORD` + `MYSQLDATABASE`
-6. `ConnectionStrings:MySQL` (fallback local de `appsettings.json`)
-
-### 3) Configuracao de deploy
-
-- O deploy pode usar o `Dockerfile` da raiz.
-- O container expoe a porta `8080` e tambem respeita `PORT` da Railway no runtime.
-- Configure o **Healthcheck Path** da Railway para `/health`.
-
-### 4) Checklist de validacao apos deploy
-
-1. Abrir `https://SEU_DOMINIO_RAILWAY/health` e confirmar `200` com `{\"status\":\"ok\"}`.
-2. Abrir `https://SEU_DOMINIO_RAILWAY/` e verificar carregamento da Home (Dashboard).
-3. Navegar em `Materiais`, `Clientes`, `Produtos` e `Pedidos` para validar frontend + backend integrados.
-4. Validar leitura/escrita no banco (criar, editar e excluir registros).
-
-### 5) Seguranca imediata
-
-Se credenciais de banco foram expostas em algum momento, gere nova senha no MySQL da Railway e atualize as variaveis dependentes antes de ir para producao.
-
----
-## ðŸ› ï¸ PrÃ©-requisitos
-
-| Software | VersÃ£o mÃ­nima | Link |
-|---|---|---|
-| .NET SDK | 8.0 | https://dotnet.microsoft.com/download |
-| XAMPP | qualquer | https://www.apachefriends.org |
+A aplicação permite o gerenciamento completo de materiais, produtos, clientes, pedidos e controle de estoque em um único sistema.
 
 ---
 
-## âš™ï¸ ConfiguraÃ§Ã£o do XAMPP
+# 🚀 Tecnologias Utilizadas
 
-### 1. Inicie o MySQL no XAMPP
-Abra o **XAMPP Control Panel** e clique em **Start** ao lado de **MySQL**.
+## 🔹 Back-end
 
-### 2. Crie o banco de dados
+* C#
+* .NET 8
+* ASP.NET Core MVC
+* Entity Framework Core
+* Pomelo.EntityFrameworkCore.MySql
 
-Abra o **phpMyAdmin** (`http://localhost/phpmyadmin`) e execute:
+## 🔹 Front-end
 
-```sql
-CREATE DATABASE liontto CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
-```
+* Razor Views
+* HTML5
+* CSS3
+* JavaScript
 
-Ou via linha de comando:
-```bash
-# Windows
-"C:\xampp\mysql\bin\mysql.exe" -u root -e "CREATE DATABASE liontto CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;"
+## 🔹 Banco de Dados
 
-# Linux/Mac
-/opt/lampp/bin/mysql -u root -e "CREATE DATABASE liontto CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;"
-```
+* MySQL
+* XAMPP
 
-> **As tabelas sÃ£o criadas automaticamente** pelo EF Core (`EnsureCreated`) na primeira execuÃ§Ã£o da aplicaÃ§Ã£o.
+## 🔹 Deploy
 
----
-
-## ðŸ”Œ Connection String
-
-Edite `appsettings.json` se necessÃ¡rio:
-
-```json
-{
-  "ConnectionStrings": {
-    "MySQL": "Server=localhost;Port=3306;Database=liontto;User=root;Password=;CharSet=utf8mb4;"
-  }
-}
-```
-
-- **Password vazio** = configuraÃ§Ã£o padrÃ£o do XAMPP (sem senha para root)
-- Se vocÃª definiu uma senha para o root do MySQL, coloque-a no campo `Password=`
-- Se o MySQL estiver em outra porta, altere `Port=3306`
+* Railway
+* Docker
 
 ---
 
-## â–¶ï¸ Executar a aplicaÃ§Ã£o
+# 📌 Sobre o Projeto
 
-```bash
-# Na raiz do projeto (onde estÃ¡ o .csproj)
-dotnet restore
-dotnet run
-```
+O projeto foi originalmente desenvolvido utilizando **MongoDB** e posteriormente migrado para **MySQL**, adotando uma arquitetura relacional mais organizada e escalável.
 
-Acesse: **http://localhost:5000**
+A aplicação utiliza:
 
-Na primeira execuÃ§Ã£o, o sistema:
-1. Cria automaticamente todas as tabelas no MySQL
-2. Insere dados de exemplo (materiais, produtos, clientes)
+* Entity Framework Core
+* Repository Pattern
+* Service Layer
+* Dependency Injection
+* MVC Architecture
+
+Frontend e backend funcionam no mesmo serviço utilizando **ASP.NET Core MVC + Razor Views**.
 
 ---
 
-## ðŸ—‚ï¸ Estrutura do Projeto
+# 🧠 Funcionalidades
 
-```
+✅ Gestão de materiais
+✅ Controle de estoque
+✅ Cadastro de clientes
+✅ Gestão de produtos
+✅ Controle de pedidos
+✅ Movimentações de entrada e saída
+✅ Dashboard administrativo
+✅ Persistência em MySQL
+✅ Seed automático de dados
+
+---
+
+# 🗂️ Estrutura do Projeto
+
+```bash id="y0ql38"
 LionttoMoveis/
-â”œâ”€â”€ Data/
-â”‚   â””â”€â”€ AppDbContext.cs         # DbContext EF Core (substitui IMongoDatabase)
-â”œâ”€â”€ Models/
-â”‚   â”œâ”€â”€ EntidadeBase.cs         # Classe base com Id (int) e CriadoEm
-â”‚   â”œâ”€â”€ Material.cs             # Tabela: materiais
-â”‚   â”œâ”€â”€ Cliente.cs              # Tabela: clientes
-â”‚   â”œâ”€â”€ Produto.cs              # Tabelas: produtos + materiais_do_produto
-â”‚   â”œâ”€â”€ Pedido.cs               # Tabelas: pedidos + itens_do_pedido
-â”‚   â””â”€â”€ Movimentacao.cs         # Tabela: movimentacoes
-â”œâ”€â”€ Repository/
-â”‚   â”œâ”€â”€ IRepository.cs          # Contrato CRUD genÃ©rico
-â”‚   â”œâ”€â”€ MySqlRepository.cs      # ImplementaÃ§Ã£o base com EF Core
-â”‚   â””â”€â”€ Repositorios.cs         # RepositÃ³rios especÃ­ficos por entidade
-â”œâ”€â”€ Services/
-â”‚   â”œâ”€â”€ EstoqueService.cs       # Regras de negÃ³cio de estoque
-â”‚   â””â”€â”€ SeedService.cs          # Dados de exemplo na primeira execuÃ§Ã£o
-â”œâ”€â”€ Controllers/                # Controllers MVC
-â”œâ”€â”€ Views/                      # Views Razor (.cshtml)
-â”œâ”€â”€ appsettings.json            # Connection string MySQL
-â””â”€â”€ Program.cs                  # Startup: EF Core + DI + Seed
+│
+├── Controllers/
+├── Data/
+├── Models/
+├── Repository/
+├── Services/
+├── Views/
+├── wwwroot/
+├── appsettings.json
+└── Program.cs
 ```
 
 ---
 
-## ðŸ”„ DiferenÃ§as MongoDB â†’ MySQL
+# 🛢️ Banco de Dados
 
-| Aspecto | MongoDB (original) | MySQL (esta versÃ£o) |
-|---|---|---|
-| **ID** | `string` (ObjectId 24 chars) | `int` (AUTO_INCREMENT) |
-| **Driver** | `MongoDB.Driver` | `Pomelo.EntityFrameworkCore.MySql` |
-| **ORM** | Nenhum (driver direto) | Entity Framework Core 8 |
-| **Schema** | Sem schema (NoSQL) | Tabelas com FK e Ã­ndices |
-| **Embedded docs** | `MaterialDoProduto` dentro de `Produto` | Tabela separada `materiais_do_produto` |
-| **Itens do pedido** | Embedded em `Pedido` | Tabela separada `itens_do_pedido` |
-| **Contexto** | `IMongoDatabase` | `AppDbContext : DbContext` |
-| **RepositÃ³rio base** | `MongoRepository<T>` | `MySqlRepository<T>` |
-| **ConexÃ£o** | `appsettings.json` â†’ `MongoDB.ConnectionString` | `appsettings.json` â†’ `ConnectionStrings.MySQL` |
+O sistema utiliza MySQL com Entity Framework Core.
 
----
+### Principais tabelas
 
-## ðŸ—„ï¸ Tabelas criadas no MySQL
-
-```sql
-materiais           -- Material (nome, unidade, quantidade, preco_unitario...)
-clientes            -- Cliente (nome, telefone, email, endereco)
-produtos            -- Produto (nome, descricao, preco_base, tempo_producao_dias)
-materiais_do_produto-- RelaÃ§Ã£o N:N Produto â†” Material (quantidade_necessaria)
-pedidos             -- Pedido (cliente_id, status, valor_total, datas...)
-itens_do_pedido     -- Itens de cada pedido (produto_id, quantidade, preco_unitario)
-movimentacoes       -- HistÃ³rico de entrada/saÃ­da de materiais
-```
+* materiais
+* clientes
+* produtos
+* pedidos
+* itens_do_pedido
+* materiais_do_produto
+* movimentacoes
 
 ---
 
-## ðŸ§ª Migrations (opcional, para produÃ§Ã£o)
+# 🔄 Migração MongoDB → MySQL
 
-Para usar Migrations em vez de `EnsureCreated`:
+A aplicação foi migrada de MongoDB para MySQL visando:
 
-```bash
-# Instalar ferramenta EF (uma vez)
-dotnet tool install --global dotnet-ef
+* Melhor organização relacional
+* Integridade de dados
+* Estrutura escalável
+* Melhor controle de consultas
+* Relacionamentos SQL
 
-# Criar migration inicial
-dotnet ef migrations add Inicial
-
-# Aplicar ao banco
-dotnet ef database update
-```
+| MongoDB      | MySQL               |
+| ------------ | ------------------- |
+| ObjectId     | int AUTO_INCREMENT  |
+| Sem schema   | Schema estruturado  |
+| Documentos   | Tabelas relacionais |
+| Mongo Driver | EF Core + Pomelo    |
 
 ---
 
-## ðŸ’¡ Conceitos POO mantidos
+# 🧩 Conceitos Aplicados
 
-- **HeranÃ§a**: `EntidadeBase` â†’ `Material`, `Cliente`, `Produto`, `Pedido`, `Movimentacao`
-- **Encapsulamento**: `StatusEstoque`, `RecalcularTotal()`, `AvancarStatus()` no model
-- **Polimorfismo**: `Descricao()` sobrescrito em cada entidade
-- **AbstraÃ§Ã£o**: `IRepository<T>` â€” controllers nÃ£o conhecem EF Core diretamente
-- **InjeÃ§Ã£o de DependÃªncia**: repositÃ³rios e services injetados pelo ASP.NET Core
+* Programação Orientada a Objetos
+* Repository Pattern
+* Dependency Injection
+* Service Layer
+* MVC Pattern
+* Entity Framework Core
 
+---
 
+# 🚂 Deploy
+
+Aplicação preparada para deploy utilizando:
+
+* Railway
+* Docker
+* ASP.NET Core
+* MySQL
+
+---
+
+# 📸 Screenshots
+
+<img width="1900" height="942" alt="image" src="https://github.com/user-attachments/assets/417d9973-5fa3-484b-95e8-7cc6246c14ab" />
+
+---
+
+# 👨‍💻 Autor
+
+## Matheus Nicastro
+
+Desenvolvedor Full Stack focado em:
+
+* C#
+* .NET
+* React
+* SQL
+* Sistemas Web
+
+---
+
+# 📄 Licença
+
+Projeto desenvolvido para fins acadêmicos, portfólio e desenvolvimento profissional.
